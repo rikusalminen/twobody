@@ -12,6 +12,9 @@ endif
 
 CFLAGS+=-I$(SRC_DIR)/include
 
+CFLAGS+=-Wno-psabi # GCC warnings about AVX ABI (simd)
+CFLAGS+=-Wno-unknown-warning-option
+
 LDLIBS+=-lm
 LDFLAGS+=
 
@@ -20,10 +23,12 @@ SRCS= \
 	src/twobody/anomaly.c \
 	src/twobody/true_anomaly.c \
 	src/twobody/eccentric_anomaly.c \
+	src/twobody/orientation.c \
 	test/twobody/conic_test.c \
 	test/twobody/anomaly_test.c \
 	test/twobody/true_anomaly_test.c \
 	test/twobody/eccentric_anomaly_test.c \
+	test/twobody/orientation_test.c \
 	test/twobody/twobody_test.c \
 	test/numtest.c \
 	src/twobody/twobody.c
@@ -37,6 +42,7 @@ libtwobody.a: \
 	src/twobody/anomaly.o \
 	src/twobody/true_anomaly.o \
 	src/twobody/eccentric_anomaly.o \
+	src/twobody/orientation.o \
 	src/twobody/twobody.o
 
 test/twobody/twobody_test: \
@@ -44,6 +50,7 @@ test/twobody/twobody_test: \
 	test/twobody/anomaly_test.o \
 	test/twobody/true_anomaly_test.o \
 	test/twobody/eccentric_anomaly_test.o \
+	test/twobody/orientation_test.o \
 	test/twobody/twobody_test.o \
 	test/numtest.o \
 	libtwobody.a
