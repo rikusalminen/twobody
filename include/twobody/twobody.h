@@ -6,6 +6,7 @@
 #include <twobody/true_anomaly.h>
 #include <twobody/eccentric_anomaly.h>
 #include <twobody/orientation.h>
+#include <twobody/orbit.h>
 
 const char *twobody_version();
 
