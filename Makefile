@@ -16,6 +16,8 @@ LDLIBS+=-lm
 LDFLAGS+=
 
 SRCS= \
+	src/twobody/conic.c \
+	test/twobody/conic_test.c \
 	test/twobody/twobody_test.c \
 	test/numtest.c \
 	src/twobody/twobody.c
@@ -25,9 +27,11 @@ TARGETS= \
 	libtwobody.a
 
 libtwobody.a: \
+	src/twobody/conic.o \
 	src/twobody/twobody.o
 
 test/twobody/twobody_test: \
+	test/twobody/conic_test.o \
 	test/twobody/twobody_test.o \
 	test/numtest.o \
 	libtwobody.a
