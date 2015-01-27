@@ -17,7 +17,9 @@ LDFLAGS+=
 
 SRCS= \
 	src/twobody/conic.c \
+	src/twobody/anomaly.c \
 	test/twobody/conic_test.c \
+	test/twobody/anomaly_test.c \
 	test/twobody/twobody_test.c \
 	test/numtest.c \
 	src/twobody/twobody.c
@@ -28,10 +30,12 @@ TARGETS= \
 
 libtwobody.a: \
 	src/twobody/conic.o \
+	src/twobody/anomaly.o \
 	src/twobody/twobody.o
 
 test/twobody/twobody_test: \
 	test/twobody/conic_test.o \
+	test/twobody/anomaly_test.o \
 	test/twobody/twobody_test.o \
 	test/numtest.o \
 	libtwobody.a
