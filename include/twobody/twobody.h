@@ -7,6 +7,7 @@
 #include <twobody/eccentric_anomaly.h>
 #include <twobody/orientation.h>
 #include <twobody/orbit.h>
+#include <twobody/stumpff.h>
 
 const char *twobody_version();
 
