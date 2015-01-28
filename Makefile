@@ -1,0 +1,78 @@
+CFLAGS+=-std=gnu99
+CFLAGS+=-MMD
+CFLAGS+=-W -Wall -Wextra
+
+ifneq ($(DEBUG), 1)
+CFLAGS+=-O3 -ffast-math -march=native
+CFLAGS+=-DNDEBUG
+else
+CFLAGS+=-O0 -g -ggdb
+CFLAGS+=-DDEBUG
+endif
+
+CFLAGS+=-I$(SRC_DIR)/include
+
+LDLIBS+=-lm
+LDFLAGS+=
+
+SRCS= \
+	test/twobody/twobody_test.c \
+	test/numtest.c \
+	src/twobody/twobody.c
+
+TARGETS= \
+	test/twobody/twobody_test \
+	libtwobody.a
+
+libtwobody.a: \
+	src/twobody/twobody.o
+
+test/twobody/twobody_test: \
+	test/twobody/twobody_test.o \
+	test/numtest.o \
+	libtwobody.a
+
+.DEFAULT_GOAL=all
+.PHONY: all
+all: $(TARGETS)
+
+SRC_DIR ?= $(patsubst %/,%, $(dir $(abspath $(firstword $(MAKEFILE_LIST)))))
+
+.PHONY: clean
+.SILENT: clean
+clean:
+	$(RM) $(TARGETS)
+	$(RM) $(OBJS)
+	$(RM) $(DEPS)
+ifneq ($(SRC_DIR), $(CURDIR))
+	-@rmdir --ignore-fail-on-non-empty -p $(OBJDIRS)
+endif
+	$(RM) cscope.out cscope.out.in cscope.out.po
+	$(RM) tags
+
+OBJS=$(SRCS:.c=.o)
+DEPS=$(OBJS:.o=.d)
+
+# Object file subdirectories
+ifneq ($(SRC_DIR), $(CURDIR))
+vpath %.c $(SRC_DIR)
+
+OBJDIRS=$(filter-out ./, $(sort $(dir $(OBJS))))
+
+$(OBJDIRS): ; @mkdir -p $@
+$(DEPS): | $(OBJDIRS)
+$(OBJS): | $(OBJDIRS)
+endif
+
+-include $(DEPS)
+
+# implicit rules for building archives not parallel safe (e.g. make -j 3)
+%.a: ; $(AR) rcs $@ $^
+
+# cscope.out
+cscope.out: $(SRCS)
+	cscope -f $@ -I$(SRC_DIR)/include -bq $^
+
+# ctags
+tags: $(SRCS)
+	ctags -f $@ -R $(SRC_DIR)/include $^
