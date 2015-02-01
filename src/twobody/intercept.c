@@ -88,11 +88,11 @@ int intercept_intersect(
         return 0;
 
     // true anomaly between target apoapsis/periapsis +/- threshold
-    double maxf = M_PI; //conic_max_true_anomaly(e1); // XXX: maxf
+    double maxf = conic_max_true_anomaly(e1);
     double fpe = conic_circular(e1) ? 0.0 :
         true_anomaly_from_radius(p1, e1, pe2 - threshold);
-    double fap = fmin(maxf, (conic_circular(e1) || !conic_closed(e2)) ? M_PI :
-        true_anomaly_from_radius(p1, e1, ap2 + threshold));
+    double fap = (conic_circular(e1) || !conic_closed(e2)) ? maxf :
+        true_anomaly_from_radius(p1, e1, ap2 + threshold);
 
     double f1 = fmin(fap, fpe), f2 = fmax(fap, fpe);
 
@@ -131,7 +131,7 @@ int intercept_intersect(
 
         for(int i = 0; i < 2; ++i) {
             double f_node = i == 0 ? fmin(f_an, f_dn) : fmax(f_an, f_dn);
-#if 1
+#if 0
             // distance at node
             double r = p1 / (1.0 + e1*cos(f_node));
 #else
@@ -150,8 +150,6 @@ int intercept_intersect(
 
     return intersect_ranges(fs1, fs2, conic_closed(e1), fs);
 }
-
-#include <assert.h> // XXX: kill me
 
 int intercept_times(
     const struct orbit *orbit1,
@@ -185,14 +183,8 @@ int intercept_times(
             for(int j = 0; j < 2; ++j) {
                 double f = fs[4*o+2*i+j];
                 double E = anomaly_true_to_eccentric(e, f);
-                double M = anomaly_eccentric_to_mean(e, E);
-
-                if(f < -M_PI) {
-                    assert(conic_closed(e));
-                    assert(E >= -M_PI && E <= M_PI); // XXX: kill
-                    assert(M >= -M_PI && M <= M_PI); // XXX: kill
-                    M -= 2.0*M_PI;
-                }
+                double M = anomaly_eccentric_to_mean(e, E) -
+                    (f < -M_PI ? 2.0*M_PI : 0.0);
 
                 times[o][2*i+j] = t_pe + M/n;
             }

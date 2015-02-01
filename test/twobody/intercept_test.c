@@ -23,9 +23,6 @@ void intercept_test(
     double arg = (-1.0 + 2.0*params[5]) * M_PI;
     double E1 = (-1.0 + 2.0*params[6]) * M_PI;
     double f1 = anomaly_eccentric_to_true(e1, E1);
-    //double f1 = (-1.0 + 2.0*params[6]) *
-        //(conic_parabolic(e1) ? 0.8*M_PI : conic_max_true_anomaly(e1));
-    //double E1 = anomaly_true_to_eccentric(e1, f1); // XXX: remove this and solve maxf
 
     struct orbit orbit1;
     orbit_from_elements(&orbit1, mu, p1, e1, i, an, arg, 0.0);
@@ -42,9 +39,6 @@ void intercept_test(
     double e2 = params[7] * 2.0;
     double E2 = (-1.0 + 2.0*params[8]) * M_PI;
     double f2 = anomaly_eccentric_to_true(e2, E2);
-    //double f2 = (-1.0 + 2.0*params[8]) *
-        //(conic_parabolic(e2) ? 0.8*M_PI : conic_max_true_anomaly(e2));
-    //double E2 = anomaly_true_to_eccentric(e2, f2); // XXX: remove this and solve maxf
     double reli = (-1.0 + 2.0*params[8]) * M_PI;
     double p2 = r1 * (1.0 + e2 * cos(f2));
 
@@ -117,7 +111,7 @@ void intercept_test(
         }
     }
 
-    int max_orbits = 2;
+    int max_orbits = 1;
     double nmin = fmin(n1, n2), delta_t = 2.0*M_PI/nmin * max_orbits;
     double t0 = t - delta_t, t1 = t + delta_t;
     int max_times = 4 * max_orbits;
