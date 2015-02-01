@@ -157,7 +157,7 @@ static bool numtest_run_tests(const struct numtest_args *args) {
                            minutes = (total / 60) % 60,
                            hours = total / 3600;
                     fprintf(stderr,
-                        "%02luh%02lum%02lus %s %02lu%% (%lu pass, %lu fail)\n",
+                        "%02luh%02lum%02lus %s (%02lu%%, %lu pass, %lu fail)\n",
                         hours, minutes, seconds,
                         ctx.test_case_name, 100*(xxx-first)/(last-first),
                         ctx.cases_passed, ctx.cases_failed);
@@ -177,26 +177,35 @@ static bool numtest_run_tests(const struct numtest_args *args) {
                    minutes = (total / 60) % 60,
                    hours = total / 3600;
             fprintf(stderr,
-                "%s %s  (%lu pass, %lu fail, %02luh%02lum%02lus)\n",
+                "%s %s  %lu%% (%lu pass, %lu fail, %02luh%02lum%02lus)\n",
                 ctx.cases_failed == 0 ? "PASS" : "FAIL", ctx.test_case_name,
+                100 * ctx.cases_passed / (ctx.cases_passed + ctx.cases_failed),
                 ctx.cases_passed, ctx.cases_failed,
                 hours, minutes, seconds);
             time_output = time_test_end;
         }
     }
 
+    time_t time_end = time(0);
     if(!args->silent && total_fail + total_pass) {
+        time_t total = time_end - time_begin,
+               seconds = total % 60,
+               minutes = (total / 60) % 60,
+               hours = total / 3600;
+
         fprintf(stdout,
-            "TESTS %s  %lu%%  (%d tests, %lu cases pass, %lu cases fail)\n",
-            ctx.cases_failed == 0 ? "PASS" : "FAIL",
+            "TESTS %s  %lu%%  "
+            "(%d tests, %lu cases pass, %lu cases fail, %02luh%02lum%02lus)\n",
+            total_fail == 0 ? "PASS" : "FAIL",
             100 * total_pass / (total_pass + total_fail),
-            ctx.tests_run, total_pass, total_fail);
+            ctx.tests_run, total_pass, total_fail,
+            hours, minutes, seconds);
     } else {
         fprintf(stderr, "NO TESTS RUN\n");
         return 1;
     }
 
-    return ctx.cases_failed == 0;
+    return total_fail == 0;
 }
 
 static void numtest_list_tests() {

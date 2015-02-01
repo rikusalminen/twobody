@@ -1,6 +1,8 @@
 #ifndef NUMTEST_H
 #define NUMTEST_H
 
+#include <stdint.h>
+
 #define ZEROF(x) ((x)*(x) < 1.0e-15)
 #define EQF(a, b) ((ZEROF(a) && ZEROF(b)) || ZEROF(((a)-(b))*((a)-(b))/((a)*(a) + ((b)*(b)))))
 #define LTF(a, b) ((a) < (b) || EQF((a), (b)))
@@ -26,9 +28,10 @@ struct numtest_case {
     void *extra_args;
 };
 
+extern uint64_t numtest_num_cases_default;
 extern const struct numtest_case numtest_cases[];
 
-extern void numtest_assert(
+void numtest_assert(
     int cond,
     struct numtest_ctx *ctx,
     const char *file, int line, const char *function,
