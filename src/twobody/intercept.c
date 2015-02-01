@@ -131,7 +131,7 @@ int intercept_intersect(
 
         for(int i = 0; i < 2; ++i) {
             double f_node = i == 0 ? fmin(f_an, f_dn) : fmax(f_an, f_dn);
-#if 0
+#if 1
             // distance at node
             double r = p1 / (1.0 + e1*cos(f_node));
 #else
