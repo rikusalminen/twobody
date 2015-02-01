@@ -15,6 +15,7 @@ extern numtest_callback
     stumpff_test,
     universal_test,
     fg_test,
+    intercept_test,
     dummy_test;
 
 const struct numtest_case numtest_cases[] = {
@@ -29,6 +30,7 @@ const struct numtest_case numtest_cases[] = {
     { "stumpff", stumpff_test, 2, 0 },
     { "universal", universal_test, 5, 0 },
     { "fg", fg_test, 5, 0 },
+    { "intercept", intercept_test, 10, 0 },
     { 0, 0, 0, 0 }
     };
 
