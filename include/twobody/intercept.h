@@ -9,4 +9,12 @@ int intercept_intersect(
     double threshold,
     double *fs);
 
+int intercept_times(
+    const struct orbit *orbit1,
+    const struct orbit *orbit2,
+    double t0, double t1,
+    const double *fs,
+    double *intercept_times,
+    int max_times);
+
 #endif
