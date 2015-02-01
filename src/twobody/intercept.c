@@ -150,3 +150,188 @@ int intercept_intersect(
 
     return intersect_ranges(fs1, fs2, conic_closed(e1), fs);
 }
+
+#include <assert.h> // XXX: kill me
+
+int intercept_times(
+    const struct orbit *orbit1,
+    const struct orbit *orbit2,
+    double t0, double t1,
+    const double *fs,
+    double *intercept_times,
+    int max_times) {
+    // find at most max_times time ranges between (t0..t1) where
+    // orbit1 is between (fs[0]..fs[1]) or (fs[2]..fs[3]) and
+    // orbit2 is between (fs[4]..fs[5]) or (fs[6]..fs[7])
+
+    double mu = orbit_gravity_parameter(orbit1);
+    const struct orbit *orbits[2] = { orbit1, orbit2 };
+
+    // find time ranges corresponding to true anomaly ranges
+    double times[2][4] = { { 1.0, -1.0, 1.0, -1.0 }, { 1.0, -1.0, 1.0, -1.0 } };
+    double periods[2] = { 0.0, 0.0 }; // orbital period
+    int n_orbit[2] = { 0, 0 }; // number of complete orbits to t0
+    for(int o = 0; o < 2; ++o) {
+        double p = orbit_semi_latus_rectum(orbits[o]);
+        double e = orbit_eccentricity(orbits[o]);
+        double t_pe = orbit_periapsis_time(orbits[o]);
+        double n = conic_mean_motion(mu, p, e);
+
+        for(int i = 0; i < 2; ++i) {
+            double f0 = fs[4*o+2*i+0], f1 = fs[4*o+2*i+1];
+            if(f0 >= f1)
+                continue;
+
+            for(int j = 0; j < 2; ++j) {
+                double f = fs[4*o+2*i+j];
+                double E = anomaly_true_to_eccentric(e, f);
+                double M = anomaly_eccentric_to_mean(e, E);
+
+                if(f < -M_PI) {
+                    assert(conic_closed(e));
+                    assert(E >= -M_PI && E <= M_PI); // XXX: kill
+                    assert(M >= -M_PI && M <= M_PI); // XXX: kill
+                    M -= 2.0*M_PI;
+                }
+
+                times[o][2*i+j] = t_pe + M/n;
+            }
+        }
+
+        if(conic_closed(e)) {
+            double P = conic_period(mu, p, e);
+            periods[o] = P;
+            n_orbit[o] = (int)trunc((t0 - t_pe)/P + (t_pe > t0 ? -0.5 : 0.5));
+        }
+    }
+
+    int isect[2] = { 0, 0 };
+    int num_times = 0;
+    double t = t0;
+    while(t < t1 && num_times < max_times) {
+        double trange[2][2];
+
+        // time interval on this orbital period
+        for(int o = 0; o < 2; ++o) {
+            double period = n_orbit[o] * periods[o];
+            trange[o][0] = times[o][2*isect[o]+0] + period;
+            trange[o][1] = times[o][2*isect[o]+1] + period;
+        }
+
+        // overlapping time interval
+        double t_begin = fmax(t, fmax(trange[0][0], trange[1][0]));
+        double t_end = fmin(t1, fmin(trange[0][1], trange[1][1]));
+        t = t_end;
+
+        // non-empty interval found
+        if(t_begin < t_end) {
+            intercept_times[2*num_times+0] = t_begin;
+            intercept_times[2*num_times+1] = t_end;
+            num_times += 1;
+        }
+
+        // advance to next intersect range
+        int advance = trange[0][1] < trange[1][1] ? 0 : 1;
+        isect[advance] += 1;
+
+        if(isect[advance] == 2 ||
+            times[advance][2*isect[advance]+0] >= // XXX: use true anomaly range instead?
+            times[advance][2*isect[advance]+1]) {
+            // advance to next orbit
+            if(!conic_closed(orbit_eccentricity(orbits[advance]))) // XXX: orbit_closed!
+                break; // open orbit, search exhausted
+
+            isect[advance] = 0;
+            n_orbit[advance] += 1;
+        }
+    }
+
+    return num_times;
+}
+
+
+#if 0
+
+int intercept_search(
+    const struct orbit *orbit1,
+    const struct orbit *orbit2,
+    double t0, double t1,
+    double threshold,
+    double *times) {
+    // find 0, 1, or 2 time ranges
+    // where distance between orbit1 and orbit2 is less than threshold
+}
+
+struct intercept {
+    double time;
+    vec4d relative_position;
+    vec4d relative_velocity;
+};
+
+double intercept_minimize(
+    const struct orbit *orbit1,
+    const struct orbit *orbit2,
+    double t0, double t1,
+    double target_distance,
+    struct intercept *intercept) {
+    // find 1 time
+    // when distance between orbit1 and orbit2 is closest to target_distance
+    // there must be an intercept between t0 and t1
+}
+
+int intercept_orbit(
+    const struct orbit *orbit1,
+    const struct orbit *orbit2,
+    double t0, double t1,
+    double threshold,
+    double target_distance,
+    struct intercept *intercepts,
+    int max_intercepts) {
+    // find at most max_intercepts times
+    // when distance between orbit1 and orbit2 is closest to target_distance
+
+    // geometry prefilter
+    // XXX: this must be done twice!
+    double fs[4];
+    int intersects = intercept_intersect(orbit1, orbit2, threshold, fs);
+    if(intersects == 0)
+        return 0;
+
+    int num_intercepts = 0;
+    while(t0 < t1 && num_intercepts < max_intercepts) {
+        // time prefilter
+        int max_times = max_intercepts;
+        double times[2*max_times];
+        int num_times = intercept_times(
+            orbit1, orbit2,
+            t0, t1,
+            fs,
+            times, max_times);
+
+        if(num_times == 0)
+            break;
+
+        for(int i = 0; i < num_times; ++i) {
+            double ti[4];
+            int is = intercept_search(
+                orbit1, orbit2,
+                times[2*i+0], times[2*i+1],
+                threshold, ti);
+
+            for(int j = 0; j < is; ++i) {
+                intercept_minimize(
+                    orbit1, orbit2,
+                    ti[2*j+0], ti[2*j+1],
+                    target_distance,
+                    intercepts + num_intercepts);
+                t0 = ti[2*j+1];
+            }
+
+            num_intercepts += is;
+        }
+    }
+
+    return num_intercepts;
+}
+
+#endif

@@ -116,4 +116,42 @@ void intercept_test(
             ASSERT_LTF(fs[1], fs[2], "First range is before second");
         }
     }
+
+    int max_orbits = 2;
+    double nmin = fmin(n1, n2), delta_t = 2.0*M_PI/nmin * max_orbits;
+    double t0 = t - delta_t, t1 = t + delta_t;
+    int max_times = 4 * max_orbits;
+    double times[max_times * 2];
+
+    int ts = intercept_times(
+        &orbit1, &orbit2,
+        t0, t1,
+        intersect_fs,
+        times, max_times);
+
+    ASSERT(ts >= 1, "1 or more intervals of intercept");
+    ASSERT(ts <= max_times, "At most max_times intervals of intercept");
+
+    if(ts < 0 || ts > max_times) return;
+
+    int time_interval = -1;
+    for(int i = 0; i < ts; ++i) {
+        ASSERT_LTF(times[2*i+0], times[2*i+1],
+            "Time range not empty");
+
+        ASSERT_RANGEF(times[2*i+0], t0, t1,
+            "Time range in search interval (begin)");
+        ASSERT_RANGEF(times[2*i+1], t0, t1,
+            "Time range in search interval (end)");
+
+        if(LTF(times[2*i+0], t) && LTF(t, times[2*i+1]))
+            time_interval = i;
+    }
+
+    ASSERT(time_interval >= 0 && time_interval < ts,
+        "Intercept time interval found");
+
+    if(time_interval == -1) return;
+
+    t0 = times[time_interval*2+0]; t1 = times[time_interval*2+1];
 }
