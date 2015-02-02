@@ -96,7 +96,7 @@ int intercept_intersect(
 
     double f1 = fmin(fap, fpe), f2 = fmax(fap, fpe);
 
-    double fs1[4] = { 2.0*M_PI, -2.0*M_PI, 2.0*M_PI, -2.0*M_PI };
+    double fs1[4] = { 1.0, -1.0, 1.0, -1.0 };
     if(conic_closed(e1) && zero(f1) && !(f2 < M_PI)) {
         // intersects anywhere on orbit (f = -pi .. pi)
         fs1[0] = -2.0*M_PI; fs1[1] = 2.0*M_PI;
@@ -131,13 +131,10 @@ int intercept_intersect(
 
         for(int i = 0; i < 2; ++i) {
             double f_node = i == 0 ? fmin(f_an, f_dn) : fmax(f_an, f_dn);
-#if 1
+
             // distance at node
             double r = p1 / (1.0 + e1*cos(f_node));
-#else
-            // periapsis = conservative estimate
-            double r = conic_periapsis(p1, e1);
-#endif
+
             // spherical trigonometry sine law
             double delta_f = asin(
                 clamp(-1.0, 1.0,
@@ -235,11 +232,11 @@ int intercept_times(
         int advance = trange[0][1] < trange[1][1] ? 0 : 1;
         isect[advance] += 1;
 
-        if(isect[advance] == 2 ||
-            times[advance][2*isect[advance]+0] >= // XXX: use true anomaly range instead?
-            times[advance][2*isect[advance]+1]) {
+        double fnext0 = fs[4*advance+2*isect[advance]+0];
+        double fnext1 = fs[4*advance+2*isect[advance]+1];
+        if(isect[advance] == 2 || fnext0 >= fnext1) {
             // advance to next orbit
-            if(!conic_closed(orbit_eccentricity(orbits[advance]))) // XXX: orbit_closed!
+            if(!orbit_elliptic(orbits[advance]))
                 break; // open orbit, search exhausted
 
             isect[advance] = 0;
