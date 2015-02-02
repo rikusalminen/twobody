@@ -175,15 +175,24 @@ int intercept_times(
         double t_pe = orbit_periapsis_time(orbits[o]);
         double n = conic_mean_motion(mu, p, e);
 
+        double f_t0 = -M_PI, f_t1 = M_PI;
+        if(!conic_closed(e)) {
+            // restrict true anomaly to range within time (t0..t1)
+            double M_t0 = (t0 - t_pe) * n, M_t1 = (t1 - t_pe) * n;
+            f_t0 = anomaly_mean_to_true(e, M_t0);
+            f_t1 = anomaly_mean_to_true(e, M_t1);
+        }
+
         for(int i = 0; i < 2; ++i) {
             double f0 = fs[4*o+2*i+0], f1 = fs[4*o+2*i+1];
-            if(f0 >= f1)
+
+            if(f0 >= f1) // empty true anomaly range
                 continue;
 
             for(int j = 0; j < 2; ++j) {
-                double f = fs[4*o+2*i+j];
-                double E = anomaly_true_to_eccentric(e, f);
-                double M = anomaly_eccentric_to_mean(e, E) -
+                // calculate time for true anomaly
+                double f = clamp(f_t0, f_t1, fs[4*o+2*i+j]);
+                double M = anomaly_true_to_mean(e, f) -
                     (f < -M_PI ? 2.0*M_PI : 0.0);
 
                 times[o][2*i+j] = t_pe + M/n;
@@ -191,7 +200,7 @@ int intercept_times(
         }
 
         if(conic_closed(e)) {
-            double P = conic_period(mu, p, e);
+            double P = 2.0*M_PI / n;
             periods[o] = P;
             n_orbit[o] = (int)trunc((t0 - t_pe)/P + (t_pe > t0 ? -0.5 : 0.5));
         }
@@ -213,7 +222,7 @@ int intercept_times(
         // overlapping time interval
         double t_begin = fmax(t, fmax(trange[0][0], trange[1][0]));
         double t_end = fmin(t1, fmin(trange[0][1], trange[1][1]));
-        t = t_end;
+        t = fmax(t0, t_end);
 
         // non-empty interval found
         if(t_begin < t_end) {

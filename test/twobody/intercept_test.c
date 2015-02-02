@@ -21,7 +21,8 @@ void intercept_test(
     double an = (ZEROF(i) || ZEROF(i - M_PI))  ? 0.0 :
         (-1.0 + 2.0*params[4]) * M_PI;
     double arg = (-1.0 + 2.0*params[5]) * M_PI;
-    double E1 = (-1.0 + 2.0*params[6]) * M_PI;
+    double E1 = (-1.0 + 2.0*params[6]) *
+        conic_closed(e1) ? M_PI : M_PI*0.75;
     double f1 = anomaly_eccentric_to_true(e1, E1);
 
     struct orbit orbit1;
@@ -37,7 +38,8 @@ void intercept_test(
     vec4d radial = unit4d(pos1), horizontal = cross(normal, radial);
 
     double e2 = params[7] * 2.0;
-    double E2 = (-1.0 + 2.0*params[8]) * M_PI;
+    double E2 = (-1.0 + 2.0*params[8]) *
+        conic_closed(e2) ? M_PI : M_PI*0.75;
     double f2 = anomaly_eccentric_to_true(e2, E2);
     double reli = (-1.0 + 2.0*params[8]) * M_PI;
     double p2 = r1 * (1.0 + e2 * cos(f2));
@@ -111,10 +113,18 @@ void intercept_test(
         }
     }
 
-    int max_orbits = 1;
-    double nmin = fmin(n1, n2), delta_t = 2.0*M_PI/nmin * max_orbits;
-    double t0 = t - delta_t, t1 = t + delta_t;
-    int max_times = 4 * max_orbits;
+    double Mmax1 = conic_closed(e1) ? 2.0*M_PI :
+        anomaly_eccentric_to_mean(e1, M_PI);
+    double Mmax2 = conic_closed(e2) ? 2.0*M_PI :
+        anomaly_eccentric_to_mean(e2, M_PI);
+    double t0 = fmax(
+        orbit_periapsis_time(&orbit1) - Mmax1/n1,
+        orbit_periapsis_time(&orbit2) - Mmax2/n2);
+    double t1 = fmin(
+        orbit_periapsis_time(&orbit1) + Mmax1/n1,
+        orbit_periapsis_time(&orbit2) + Mmax2/n2);
+
+    int max_times = 8;
     double times[max_times * 2];
 
     int ts = intercept_times(
