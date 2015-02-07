@@ -158,4 +158,13 @@ void intercept_test(
     if(time_interval == -1) return;
 
     t0 = times[time_interval*2+0]; t1 = times[time_interval*2+1];
+
+    int search_steps = 30;
+    int hits = intercept_search(
+        &orbit1, &orbit2,
+        t0, t1,
+        threshold, search_steps,
+        times, max_times);
+
+    ASSERT(hits == 1 || hits == 2, "One or two hits");
 }

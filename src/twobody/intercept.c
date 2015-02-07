@@ -247,23 +247,120 @@ int intercept_times(
     return num_times;
 }
 
-
-#if 0
-
 int intercept_search(
     const struct orbit *orbit1,
     const struct orbit *orbit2,
     double t0, double t1,
     double threshold,
-    double *times) {
+    int max_steps,
+    double *times,
+    int max_times) {
     // find 0, 1, or 2 time ranges
     // where distance between orbit1 and orbit2 is less than threshold
+
+    double mu = orbit_gravity_parameter(orbit1);
+
+    const struct orbit *orbits[2] = { orbit1, orbit2 };
+    double p[2] = {
+        orbit_semi_latus_rectum(orbit1),
+        orbit_semi_latus_rectum(orbit2)
+    };
+    double e[2] = {
+        orbit_eccentricity(orbit1),
+        orbit_eccentricity(orbit2)
+    };
+    double n[2] = {
+        conic_mean_motion(mu, p[0], e[0]),
+        conic_mean_motion(mu, p[1], e[1])
+    };
+    double t_pe[2] = {
+        orbit_periapsis_time(orbit1),
+        orbit_periapsis_time(orbit2),
+    };
+
+    double vmax =
+        conic_periapsis_velocity(mu, p[0], e[0]) +
+        conic_periapsis_velocity(mu, p[1], e[1]);
+    double amax =
+        mu/conic_periapsis(p[0], e[0]) +
+        mu/conic_periapsis(p[1], e[1]);
+
+    vec4d nodes = cross(orbit1->normal_axis, orbit2->normal_axis);
+    int coplanar = dot(nodes, nodes) < DBL_EPSILON;
+
+    vec4d pos[2], vel[2];
+    double E[2] = { // eccentric anomaly, initialize to mean anomaly at t0
+        (t0 - t_pe[0]) * n[0],
+        (t0 - t_pe[1]) * n[1],
+    };
+
+    int prev_sign = 0;
+    double min_dt = (t1-t0) / max_steps;
+    double t = t0;
+    int num_steps = 0;
+    while(t < t1 && num_steps++ < max_steps) {
+        for(int o = 0; o < 2; ++o) {
+            double M = (t - t_pe[o]) * n[o];
+            E[o] = anomaly_eccentric_iterate(e[o], M, E[o], -1);
+
+            pos[o] = orbit_position_eccentric(orbits[o], E[o]);
+            vel[o] = orbit_velocity_eccentric(orbits[o], E[o]);
+        }
+
+        vec4d dr = pos[1] - pos[0], dv = vel[0] - vel[1];
+        double dist = mag(dr);
+        double vrel = dot(dr, dv) / dist;
+
+        int s = vrel < 0.0 ? -1 : 1;
+        if(s * prev_sign < 0) // XXX: prev_sign < 0 && s > 0) {
+            printf("[%4.4lf]\tsign change!  %d -> %d\tdist: %lf\tstep %d\n",
+                t, prev_sign, s, dist, num_steps);
+        } /* TODO: sign change */
+        prev_sign = s;
+
+        if(dist < threshold) {
+            printf("[%4.4lf]\tdist < threshold\t(%lf < %lf)\tsign: %d\tstep %d\n",
+                t, dist, threshold, s, num_steps);
+            return 1;
+        } /* XXX: finished */
+
+        double deltas[] = {
+            // distance at maximum velocity
+            (dist - threshold) / vmax,
+            // distance at relative velocity + max acceleration (may be NaN)
+            // 1/2 amax * t^2 + vrel t + (distance-threshold) = 0
+            (-vrel + sqrt(vrel*vrel - 4.0*amax*(dist-threshold))) / amax,
+            // etc
+            // etc
+        };
+
+        double dt = min_dt;
+        for(unsigned i = 0; i < sizeof(deltas)/sizeof(double); ++i)
+            dt = fmax(dt, deltas[i]);
+
+        t += dt;
+        for(int o = 0; o < 2; ++o)
+            E[o] += eccentric_dEdt(mu, p[o], e[o], E[0]) * dt;
+    }
+
+    return 0;
 }
 
+
+#if 0
+
 struct intercept {
-    double time;
+    vec4d pos1, vel1;
+    vec4d pos2, vel2;
     vec4d relative_position;
     vec4d relative_velocity;
+    double time;
+    double distance;
+    double speed;
+
+    double E1, E2; // XXX: ???
+    double f1, f2;
+    double s0, s1;
 };
 
 double intercept_minimize(
