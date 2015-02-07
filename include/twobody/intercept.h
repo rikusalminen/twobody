@@ -17,4 +17,13 @@ int intercept_times(
     double *intercept_times,
     int max_times);
 
+int intercept_search(
+    const struct orbit *orbit1,
+    const struct orbit *orbit2,
+    double t0, double t1,
+    double threshold,
+    int max_steps,
+    double *times,
+    int max_times);
+
 #endif
