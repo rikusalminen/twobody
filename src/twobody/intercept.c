@@ -255,8 +255,11 @@ int intercept_search(
     int max_steps,
     double *times,
     int max_times) {
-    // find 0, 1, or 2 time ranges
-    // where distance between orbit1 and orbit2 is less than threshold
+
+    (void)times; (void)max_times; // XXX: 
+
+    // find time when distance between orbit1 and orbit2 is less than threshold
+
 
     double mu = orbit_gravity_parameter(orbit1);
 
@@ -285,8 +288,8 @@ int intercept_search(
         mu/conic_periapsis(p[0], e[0]) +
         mu/conic_periapsis(p[1], e[1]);
 
-    vec4d nodes = cross(orbit1->normal_axis, orbit2->normal_axis);
-    int coplanar = dot(nodes, nodes) < DBL_EPSILON;
+    //vec4d nodes = cross(orbit1->normal_axis, orbit2->normal_axis);
+    //int coplanar = dot(nodes, nodes) < DBL_EPSILON;
 
     vec4d pos[2], vel[2];
     double E[2] = { // eccentric anomaly, initialize to mean anomaly at t0
@@ -296,7 +299,7 @@ int intercept_search(
 
     int prev_sign = 0;
     double min_dt = (t1-t0) / max_steps;
-    double t = t0;
+    double t = t0, prev_time = NAN;
     int num_steps = 0;
     while(t < t1 && num_steps++ < max_steps) {
         for(int o = 0; o < 2; ++o) {
@@ -311,25 +314,33 @@ int intercept_search(
         double dist = mag(dr);
         double vrel = dot(dr, dv) / dist;
 
-        int s = vrel < 0.0 ? -1 : 1;
-        if(s * prev_sign < 0) // XXX: prev_sign < 0 && s > 0) {
+        int sgn = vrel < 0.0 ? -1 : 1;
+        if(sgn * prev_sign < 0) { // XXX: prev_sign < 0 && sgn > 0) {
             printf("[%4.4lf]\tsign change!  %d -> %d\tdist: %lf\tstep %d\n",
-                t, prev_sign, s, dist, num_steps);
+                t, prev_sign, sgn, dist, num_steps);
+
+            // closest approach found, move time window backwards
+            // and adjust time step
+            min_dt = (t - prev_time) / (max_steps - num_steps);
+            t = prev_time + min_dt;
+            t1 = t;
+
+            return 2; // XXX: !!!
         } /* TODO: sign change */
-        prev_sign = s;
 
         if(dist < threshold) {
             printf("[%4.4lf]\tdist < threshold\t(%lf < %lf)\tsign: %d\tstep %d\n",
-                t, dist, threshold, s, num_steps);
+                t, dist, threshold, sgn, num_steps);
             return 1;
         } /* XXX: finished */
 
         double deltas[] = {
+            -1.0, //XXX:
             // distance at maximum velocity
-            (dist - threshold) / vmax,
+            //(dist - threshold) / vmax,
             // distance at relative velocity + max acceleration (may be NaN)
             // 1/2 amax * t^2 + vrel t + (distance-threshold) = 0
-            (-vrel + sqrt(vrel*vrel - 4.0*amax*(dist-threshold))) / amax,
+            //(-vrel + sqrt(vrel*vrel - 4.0*amax*(dist-threshold))) / amax,
             // etc
             // etc
         };
@@ -341,6 +352,9 @@ int intercept_search(
         t += dt;
         for(int o = 0; o < 2; ++o)
             E[o] += eccentric_dEdt(mu, p[o], e[o], E[0]) * dt;
+
+        prev_time = t;
+        prev_sign = sgn;
     }
 
     return 0;
@@ -354,13 +368,17 @@ struct intercept {
     vec4d pos2, vel2;
     vec4d relative_position;
     vec4d relative_velocity;
+
+    double mu;
     double time;
     double distance;
     double speed;
 
-    double E1, E2; // XXX: ???
-    double f1, f2;
+    double E1, E2;
     double s0, s1;
+
+    double M1, M2;
+    double f1, f2;
 };
 
 double intercept_minimize(
