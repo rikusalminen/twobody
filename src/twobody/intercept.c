@@ -304,8 +304,10 @@ int intercept_search(
     while(t < t1 && num_steps++ < max_steps) {
         for(int o = 0; o < 2; ++o) {
             double M = (t - t_pe[o]) * n[o];
-            //E[o] = anomaly_eccentric_iterate(e[o], M, E[o], -1); // XXX:
-            E[o] = anomaly_mean_to_eccentric(e[o], M);
+            if(conic_parabolic(e[o]))
+                E[o] = anomaly_mean_to_eccentric(e[o], M);
+            else
+                E[o] = anomaly_eccentric_iterate(e[o], M, E[o], -1);
 
             pos[o] = orbit_position_eccentric(orbits[o], E[o]);
             vel[o] = orbit_velocity_eccentric(orbits[o], E[o]);
@@ -352,7 +354,8 @@ int intercept_search(
 
         t += dt;
         for(int o = 0; o < 2; ++o)
-            E[o] += anomaly_dEdM(e[o], E[o]) * n[o] * dt;
+            if(!conic_parabolic(e[o]))
+                E[o] += anomaly_dEdM(e[o], E[o]) * n[o] * dt;
 
         prev_time = t;
         prev_sign = sgn;
