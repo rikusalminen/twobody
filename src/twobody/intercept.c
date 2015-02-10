@@ -304,7 +304,8 @@ int intercept_search(
     while(t < t1 && num_steps++ < max_steps) {
         for(int o = 0; o < 2; ++o) {
             double M = (t - t_pe[o]) * n[o];
-            E[o] = anomaly_eccentric_iterate(e[o], M, E[o], -1);
+            //E[o] = anomaly_eccentric_iterate(e[o], M, E[o], -1); // XXX:
+            E[o] = anomaly_mean_to_eccentric(e[o], M);
 
             pos[o] = orbit_position_eccentric(orbits[o], E[o]);
             vel[o] = orbit_velocity_eccentric(orbits[o], E[o]);
@@ -316,8 +317,8 @@ int intercept_search(
 
         int sgn = vrel < 0.0 ? -1 : 1;
         if(sgn * prev_sign < 0) { // XXX: prev_sign < 0 && sgn > 0) {
-            printf("[%4.4lf]\tsign change!  %d -> %d\tdist: %lf\tstep %d\n",
-                t, prev_sign, sgn, dist, num_steps);
+            //printf("[%4.4lf]\tsign change!  %d -> %d\tdist: %lf\tstep %d\n",
+                //t, prev_sign, sgn, dist, num_steps);
 
             // closest approach found, move time window backwards
             // and adjust time step
@@ -329,8 +330,8 @@ int intercept_search(
         } /* TODO: sign change */
 
         if(dist < threshold) {
-            printf("[%4.4lf]\tdist < threshold\t(%lf < %lf)\tsign: %d\tstep %d\n",
-                t, dist, threshold, sgn, num_steps);
+            //printf("[%4.4lf]\tdist < threshold\t(%lf < %lf)\tsign: %d\tstep %d\n",
+                //t, dist, threshold, sgn, num_steps);
             return 1;
         } /* XXX: finished */
 
@@ -351,7 +352,7 @@ int intercept_search(
 
         t += dt;
         for(int o = 0; o < 2; ++o)
-            E[o] += eccentric_dEdt(mu, p[o], e[o], E[0]) * dt;
+            E[o] += anomaly_dEdM(e[o], E[o]) * n[o] * dt;
 
         prev_time = t;
         prev_sign = sgn;
