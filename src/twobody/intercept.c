@@ -313,7 +313,7 @@ int intercept_search(
             vel[o] = orbit_velocity_eccentric(orbits[o], E[o]);
         }
 
-        vec4d dr = pos[1] - pos[0], dv = vel[0] - vel[1];
+        vec4d dr = pos[1] - pos[0], dv = vel[1] - vel[0];
         double dist = mag(dr);
         double vrel = dot(dr, dv) / dist;
 
@@ -338,12 +338,11 @@ int intercept_search(
         } /* XXX: finished */
 
         double deltas[] = {
-            -1.0, //XXX:
             // distance at maximum velocity
-            //(dist - threshold) / vmax,
+            (dist - threshold) / vmax,
             // distance at relative velocity + max acceleration (may be NaN)
             // 1/2 amax * t^2 + vrel t + (distance-threshold) = 0
-            //(-vrel + sqrt(vrel*vrel - 4.0*amax*(dist-threshold))) / amax,
+            (vrel + sqrt(vrel*vrel - 4.0*amax*(dist-threshold))) / amax,
             // etc
             // etc
         };
@@ -352,13 +351,13 @@ int intercept_search(
         for(unsigned i = 0; i < sizeof(deltas)/sizeof(double); ++i)
             dt = fmax(dt, deltas[i]);
 
+        prev_time = t;
+        prev_sign = sgn;
+
         t += dt;
         for(int o = 0; o < 2; ++o)
             if(!conic_parabolic(e[o]))
                 E[o] += anomaly_dEdM(e[o], E[o]) * n[o] * dt;
-
-        prev_time = t;
-        prev_sign = sgn;
     }
 
     return 0;
