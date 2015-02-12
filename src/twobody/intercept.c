@@ -223,9 +223,17 @@ int intercept_times(
 
         // non-empty interval found
         if(t_begin < t_end) {
-            intercept_times[2*num_times+0] = t_begin;
-            intercept_times[2*num_times+1] = t_end;
-            num_times += 1;
+            if(num_times >= 1 &&
+                (t_begin <= intercept_times[2*num_times-1] ||
+                zero(t_begin - intercept_times[2*num_times-1]))) {
+                // merge to previous time interval
+                intercept_times[2*num_times-1] = t_end;
+            } else {
+                // add new time interval
+                intercept_times[2*num_times+0] = t_begin;
+                intercept_times[2*num_times+1] = t_end;
+                num_times += 1;
+            }
         }
 
         // advance to next intersect range
