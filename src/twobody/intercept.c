@@ -255,19 +255,14 @@ int intercept_times(
     return num_times;
 }
 
-int intercept_search(
+double intercept_search(
     const struct orbit *orbit1,
     const struct orbit *orbit2,
     double t0, double t1,
     double threshold,
+    double target_distance,
     int max_steps,
-    double *times,
-    int max_times) {
-
-    (void)times; (void)max_times; // XXX: 
-
-    // find time when distance between orbit1 and orbit2 is less than threshold
-
+    struct intercept *intercept) {
 
     double mu = orbit_gravity_parameter(orbit1);
 
@@ -300,16 +295,18 @@ int intercept_search(
     //int coplanar = dot(nodes, nodes) < DBL_EPSILON;
 
     vec4d pos[2], vel[2];
+    vec4d dr, dv;
+    double dist = NAN, vrel = NAN;
     double E[2] = { // eccentric anomaly, initialize to mean anomaly at t0
         (t0 - t_pe[0]) * n[0],
         (t0 - t_pe[1]) * n[1],
     };
 
-    int prev_sign = 0;
-    double min_dt = (t1-t0) / max_steps;
-    double t = t0, prev_time = NAN;
-    int num_steps = 0;
-    while(t < t1 && num_steps++ < max_steps) {
+    double min_dt = (t1-t0) / (max_steps/2);
+
+    double t = t0, prev_time = NAN, t_end = t0;
+    int prev_sgn = 0;
+    for(int step = 0; step < max_steps; ++step) {
         for(int o = 0; o < 2; ++o) {
             double M = (t - t_pe[o]) * n[o];
             if(conic_parabolic(e[o]))
@@ -321,141 +318,71 @@ int intercept_search(
             vel[o] = orbit_velocity_eccentric(orbits[o], E[o]);
         }
 
-        vec4d dr = pos[1] - pos[0], dv = vel[1] - vel[0];
-        double dist = mag(dr);
-        double vrel = dot(dr, dv) / dist;
-
+        dr = pos[1] - pos[0];
+        dv = vel[1] - vel[0];
+        dist = mag(dr);
+        vrel = dot(dr, dv) / dist;
         int sgn = vrel < 0.0 ? -1 : 1;
-        if(sgn * prev_sign < 0) { // XXX: prev_sign < 0 && sgn > 0) {
-            //printf("[%4.4lf]\tsign change!  %d -> %d\tdist: %lf\tstep %d\n",
-                //t, prev_sign, sgn, dist, num_steps);
-
-            // closest approach found, move time window backwards
-            // and adjust time step
-            min_dt = (t - prev_time) / (max_steps - num_steps);
-            t = prev_time + min_dt;
-            t1 = t;
-
-            return 2; // XXX: !!!
-        } /* TODO: sign change */
-
-        if(dist < threshold) {
-            //printf("[%4.4lf]\tdist < threshold\t(%lf < %lf)\tsign: %d\tstep %d\n",
-                //t, dist, threshold, sgn, num_steps);
-            return 1;
-        } /* XXX: finished */
-
-        double deltas[] = {
-            // distance at maximum velocity
-            (dist - threshold) / vmax,
-            // distance at relative velocity + max acceleration (may be NaN)
-            // 1/2 amax * t^2 + vrel t + (distance-threshold) = 0
-            (vrel + sqrt(vrel*vrel - 4.0*amax*(dist-threshold))) / amax,
-            // etc
-            // etc
-        };
 
         double dt = min_dt;
-        for(unsigned i = 0; i < sizeof(deltas)/sizeof(double); ++i)
-            dt = fmax(dt, deltas[i]);
 
-        prev_time = t;
-        prev_sign = sgn;
+        if(target_distance >= 0.0 && zero(dist-target_distance)) {
+            // minimization finished
+            //printf("minimization finished\n");
+            break;
+        } else if((!isfinite(target_distance) || target_distance < 0.0) &&
+            dist < threshold) {
+            // skip minimization if target_distance < 0.0
+            //printf("skip minimization\n");
+            break;
+        } else if(sgn < 0 && dist < threshold && t_end > t0) {
+            // below threshold, do minimization step
+            //printf("minimization step\n");
+            dt = (target_distance - dist) / vrel;
+        } else if(sgn < 0 && prev_sgn > 0) {
+            // closest approach found, move time backwards and adjust time step
+            //printf("sign change\n");
+            int num_steps = 4; // XXX: be smarter
+            min_dt = (t - prev_time) / num_steps;
+            double next_time = prev_time + min_dt;
+            dt = next_time - t;
+            t_end = fmax(t, t_end);
+        } else {
+            //printf("skip ahead\n");
+            // searching, skip ahead in time
+            double deltas[] = {
+                //-1.0, //XXX: // distance at maximum velocity
+                (dist - threshold) / vmax,
+                // distance at relative velocity + max acceleration (may be NaN)
+                // 1/2 amax * t^2 + vrel t + (distance-threshold) = 0
+                (vrel + sqrt(vrel*vrel - 4.0*amax*(dist-threshold))) / amax,
+            };
 
-        t += dt;
-        for(int o = 0; o < 2; ++o)
-            if(!conic_parabolic(e[o]))
-                E[o] += anomaly_dEdM(e[o], E[o]) * n[o] * dt;
-    }
+            for(unsigned i = 0; i < sizeof(deltas)/sizeof(double); ++i)
+                if(isfinite(deltas[i]))
+                    dt = fmax(dt, deltas[i]);
+        }
 
-    return 0;
-}
-
-
-#if 0
-
-struct intercept {
-    vec4d pos1, vel1;
-    vec4d pos2, vel2;
-    vec4d relative_position;
-    vec4d relative_velocity;
-
-    double mu;
-    double time;
-    double distance;
-    double speed;
-
-    double E1, E2;
-    double s0, s1;
-
-    double M1, M2;
-    double f1, f2;
-};
-
-double intercept_minimize(
-    const struct orbit *orbit1,
-    const struct orbit *orbit2,
-    double t0, double t1,
-    double target_distance,
-    struct intercept *intercept) {
-    // find 1 time
-    // when distance between orbit1 and orbit2 is closest to target_distance
-    // there must be an intercept between t0 and t1
-}
-
-int intercept_orbit(
-    const struct orbit *orbit1,
-    const struct orbit *orbit2,
-    double t0, double t1,
-    double threshold,
-    double target_distance,
-    struct intercept *intercepts,
-    int max_intercepts) {
-    // find at most max_intercepts times
-    // when distance between orbit1 and orbit2 is closest to target_distance
-
-    // geometry prefilter
-    // XXX: this must be done twice!
-    double fs[4];
-    int intersects = intercept_intersect(orbit1, orbit2, threshold, fs);
-    if(intersects == 0)
-        return 0;
-
-    int num_intercepts = 0;
-    while(t0 < t1 && num_intercepts < max_intercepts) {
-        // time prefilter
-        int max_times = max_intercepts;
-        double times[2*max_times];
-        int num_times = intercept_times(
-            orbit1, orbit2,
-            t0, t1,
-            fs,
-            times, max_times);
-
-        if(num_times == 0)
+        if(zero(dt)) // TODO: terminate when dt gets small enough
             break;
 
-        for(int i = 0; i < num_times; ++i) {
-            double ti[4];
-            int is = intercept_search(
-                orbit1, orbit2,
-                times[2*i+0], times[2*i+1],
-                threshold, ti);
-
-            for(int j = 0; j < is; ++i) {
-                intercept_minimize(
-                    orbit1, orbit2,
-                    ti[2*j+0], ti[2*j+1],
-                    target_distance,
-                    intercepts + num_intercepts);
-                t0 = ti[2*j+1];
-            }
-
-            num_intercepts += is;
-        }
+        prev_time = t; prev_sgn = sgn;
+        t += dt;
     }
+    //
+    // if(both circular && coplanar && prograde) t_end = t1;
 
-    return num_intercepts;
+    intercept->position[0] = pos[0]; intercept->position[1] = pos[1];
+    intercept->velocity[0] = vel[0]; intercept->velocity[1] = vel[1];
+    intercept->relative_position = dr; intercept->relative_velocity = dv;
+
+    intercept->mu = mu;
+    intercept->time = t;
+    intercept->distance = dist;
+    intercept->speed = vrel; // vrel or vel[1]-vel[0]
+
+    intercept->E1 = E[0]; intercept->E2 = E[1];
+    intercept->xxx1 = NAN; intercept->xxx2 = NAN;
+
+    return t_end; // XXX: return value?
 }
-
-#endif

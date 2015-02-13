@@ -160,11 +160,16 @@ void intercept_test(
     t0 = times[time_interval*2+0]; t1 = times[time_interval*2+1];
 
     int search_steps = 30;
-    int hits = intercept_search(
+    double target_distance = 0.0;
+    struct intercept intercept;
+    double t_end = intercept_search(
         &orbit1, &orbit2,
         t0, t1,
-        threshold, search_steps,
-        times, max_times);
+        threshold, target_distance,
+        search_steps,
+        &intercept);
+    (void)t_end; // TODO: loop over range and search for correct intercept?
 
-    ASSERT(hits == 1 || hits == 2, "One or two hits");
+    ASSERT_LTF(intercept.distance, threshold,
+        "Intercept distance is less than threshold");
 }
