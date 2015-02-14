@@ -3,6 +3,7 @@
 #include <twobody/true_anomaly.h>
 #include <twobody/orbit.h>
 #include <twobody/intercept.h>
+#include <twobody/math_utils.h>
 
 static int intersect_ranges(
     const double *fs1, const double *fs2,
@@ -255,6 +256,8 @@ int intercept_times(
     return num_times;
 }
 
+#include <stdio.h> // XXX: kill me ! 
+
 double intercept_search(
     const struct orbit *orbit1,
     const struct orbit *orbit2,
@@ -339,12 +342,13 @@ double intercept_search(
             // below threshold, do minimization step
             //printf("minimization step\n");
             dt = (target_distance - dist) / vrel;
-        } else if(sgn < 0 && prev_sgn > 0) {
+            break; // XXX: make sure that minimization converges!
+        } else if(sgn > 0 && prev_sgn < 0) {
             // closest approach found, move time backwards and adjust time step
             //printf("sign change\n");
             int num_steps = 4; // XXX: be smarter
             min_dt = (t - prev_time) / num_steps;
-            double next_time = prev_time + min_dt;
+            double next_time = prev_time + (step == 1 ? 0.0 : min_dt);
             dt = next_time - t;
             t_end = fmax(t, t_end);
         } else {
@@ -361,10 +365,13 @@ double intercept_search(
             for(unsigned i = 0; i < sizeof(deltas)/sizeof(double); ++i)
                 if(isfinite(deltas[i]))
                     dt = fmax(dt, deltas[i]);
+
+            // if(t > t_end) // TODO: terminate when search interval exhausted
+                // break;
         }
 
-        if(zero(dt)) // TODO: terminate when dt gets small enough
-            break;
+        //if(zero(dt)) // TODO: terminate when dt gets small enough
+            //break;
 
         prev_time = t; prev_sgn = sgn;
         t += dt;
