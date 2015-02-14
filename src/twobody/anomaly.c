@@ -52,13 +52,22 @@ double anomaly_eccentric_iterate(double e, double M, double E0, int max_steps) {
 
     double threshold = DBL_EPSILON;
 
+    double Mperiod = 0.0;
+    if(conic_elliptic(e)) {
+        // mean anomaly -pi..pi (faster covergence), Mperiod is multiple of 2pi
+        double MM = angle_clamp(M);
+        Mperiod = M - MM;
+        M = MM;
+        E0 = E0 - Mperiod;
+    }
+
     double x = E0, x0 = x;
     do {
         x0 = x;
         x = iter(e, M, x);
-    } while(num_steps >= 0 && (x0-x)*(x0-x) > threshold);
+    } while(--num_steps >= 0 && (x0-x)*(x0-x) > threshold);
 
-    return x;
+    return x + Mperiod;
 }
 
 double anomaly_mean_to_eccentric(double e, double M) {
@@ -68,8 +77,14 @@ double anomaly_mean_to_eccentric(double e, double M) {
         return x - 1.0/x;
     }
 
+    double E0 = M;
+    if(e > 1.0) // hyperbolic orbit
+        E0 = sign(M) * log(2.0 * fabs(M) / e + 1.85);
+    else if(e > 0.9) // high eccentricity
+        E0 = M + 0.85 * e * sign(angle_clamp(M));
+
     // eccentric or hyperbolic anomaly
-    return anomaly_eccentric_iterate(e, M, M, 0);
+    return anomaly_eccentric_iterate(e, M, E0, 0);
 }
 
 double anomaly_eccentric_to_mean(double e, double E) {
