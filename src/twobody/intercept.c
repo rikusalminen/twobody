@@ -312,10 +312,14 @@ double intercept_search(
     for(int step = 0; step < max_steps; ++step) {
         for(int o = 0; o < 2; ++o) {
             double M = (t - t_pe[o]) * n[o];
+// XXX: enable this
+#if 0
             if(conic_parabolic(e[o]))
                 E[o] = anomaly_mean_to_eccentric(e[o], M);
             else
                 E[o] = anomaly_eccentric_iterate(e[o], M, E[o], -1);
+#endif
+            E[o] = anomaly_mean_to_eccentric(e[o], M);
 
             pos[o] = orbit_position_eccentric(orbits[o], E[o]);
             vel[o] = orbit_velocity_eccentric(orbits[o], E[o]);
@@ -331,28 +335,30 @@ double intercept_search(
 
         if(target_distance >= 0.0 && zero(dist-target_distance)) {
             // minimization finished
-            //printf("minimization finished\n");
+            //printf("[%03d] minimization finished\n", step);
             break;
         } else if((!isfinite(target_distance) || target_distance < 0.0) &&
             dist < threshold) {
             // skip minimization if target_distance < 0.0
-            //printf("skip minimization\n");
+            //printf("[%03d] skip minimization\n", step);
             break;
         } else if(sgn < 0 && dist < threshold && t_end > t0) {
             // below threshold, do minimization step
-            //printf("minimization step\n");
+            //printf("[%03d] minimization step\n", step);
             dt = (target_distance - dist) / vrel;
             break; // XXX: make sure that minimization converges!
         } else if(sgn > 0 && prev_sgn < 0) {
             // closest approach found, move time backwards and adjust time step
-            //printf("sign change\n");
+            //printf("[%03d] sign change\n", step);
             int num_steps = 4; // XXX: be smarter
             min_dt = (t - prev_time) / num_steps;
-            double next_time = prev_time + (step == 1 ? 0.0 : min_dt);
+            double next_time = prev_time;
             dt = next_time - t;
             t_end = fmax(t, t_end);
+        } else if(t > t1) {
+            // search exhausted
+            break;
         } else {
-            //printf("skip ahead\n");
             // searching, skip ahead in time
             double deltas[] = {
                 //-1.0, //XXX: // distance at maximum velocity
@@ -366,8 +372,8 @@ double intercept_search(
                 if(isfinite(deltas[i]))
                     dt = fmax(dt, deltas[i]);
 
-            // if(t > t_end) // TODO: terminate when search interval exhausted
-                // break;
+            //printf("[%03d] skip ahead %2.2lfx\n", step, dt/min_dt);
+
         }
 
         //if(zero(dt)) // TODO: terminate when dt gets small enough
@@ -375,6 +381,12 @@ double intercept_search(
 
         prev_time = t; prev_sgn = sgn;
         t += dt;
+// XXX: enable this
+#if 0
+        for(int o = 0; o < 2; ++o)
+            if(!conic_parabolic(e[o]))
+                E[o] += anomaly_dEdM(e[o], E[o]) * n[o] * dt;
+#endif
     }
     //
     // if(both circular && coplanar && prograde) t_end = t1;
