@@ -333,14 +333,16 @@ double intercept_search(
 
         double dt = min_dt;
 
-        if(target_distance >= 0.0 && zero(dist-target_distance)) {
+        if(zero(square(dist - fmax(0.0, target_distance))/square(threshold))) {
             // minimization finished
             //printf("[%03d] minimization finished\n", step);
+            // XXX: t_end?!
             break;
         } else if((!isfinite(target_distance) || target_distance < 0.0) &&
             dist < threshold) {
             // skip minimization if target_distance < 0.0
             //printf("[%03d] skip minimization\n", step);
+            // XXX: t_end?
             break;
         } else if(sgn < 0 && dist < threshold && t_end > t0) {
             // below threshold, do minimization step
