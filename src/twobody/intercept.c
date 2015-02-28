@@ -335,23 +335,18 @@ double intercept_search(
 
         if(zero(square(dist - fmax(0.0, target_distance))/square(threshold))) {
             // minimization finished
-            //printf("[%03d] minimization finished\n", step);
+            printf("[%03d] minimization finished\n", step);
             // XXX: t_end?!
-            break;
-        } else if((!isfinite(target_distance) || target_distance < 0.0) &&
-            dist < threshold) {
-            // skip minimization if target_distance < 0.0
-            //printf("[%03d] skip minimization\n", step);
-            // XXX: t_end?
             break;
         } else if(sgn < 0 && dist < threshold && t_end > t0) {
             // below threshold, do minimization step
-            //printf("[%03d] minimization step\n", step);
+            printf("[%03d] minimization step\n", step);
             dt = (target_distance - dist) / vrel;
             break; // XXX: make sure that minimization converges!
         } else if(sgn > 0 && prev_sgn < 0) {
             // closest approach found, move time backwards and adjust time step
-            //printf("[%03d] sign change\n", step);
+            printf("[%03d] sign change, t: %lf\tprev_time: %lf\tmin_dt: %lf\n",
+                step, t, prev_time, min_dt);
             int num_steps = 4; // XXX: be smarter
             min_dt = (t - prev_time) / num_steps;
             double next_time = prev_time;
@@ -363,18 +358,19 @@ double intercept_search(
         } else {
             // searching, skip ahead in time
             double deltas[] = {
-                //-1.0, //XXX: // distance at maximum velocity
-                (dist - threshold) / vmax,
+                -1.0, //XXX:
+                // distance at maximum velocity
+                //(dist - threshold) / vmax,
                 // distance at relative velocity + max acceleration (may be NaN)
                 // 1/2 amax * t^2 + vrel t + (distance-threshold) = 0
-                (vrel + sqrt(vrel*vrel - 4.0*amax*(dist-threshold))) / amax,
+                //(vrel + sqrt(vrel*vrel - 4.0*amax*(dist-threshold))) / amax,
             };
 
             for(unsigned i = 0; i < sizeof(deltas)/sizeof(double); ++i)
                 if(isfinite(deltas[i]))
                     dt = fmax(dt, deltas[i]);
 
-            //printf("[%03d] skip ahead %2.2lfx\n", step, dt/min_dt);
+            printf("[%03d] skip ahead %2.2lfx\n", step, dt/min_dt);
 
         }
 
@@ -406,4 +402,46 @@ double intercept_search(
     intercept->xxx1 = NAN; intercept->xxx2 = NAN;
 
     return t_end; // XXX: return value?
+}
+
+int intercept_orbit(
+    const struct orbit *orbit1,
+    const struct orbit *orbit2,
+    double t0, double t1,
+    double threshold, double target_distance,
+    struct intercept *intercepts,
+    int max_intercepts,
+    int max_steps) {
+
+    double fs[8];
+    for(int o = 0; o < 2; ++o) {
+        if(intercept_intersect(orbit1, orbit2, threshold, fs + o*4) == 0)
+            return t1;
+    }
+
+    int max_times = 4*max_intercepts;
+    double times[max_times];
+    int ts = intercept_times(orbit1, orbit2, t0, t1, fs, times, max_times);
+
+    int num_intercepts = 0;
+    for(int time = 0; time < ts; ++time) {
+        double t_begin = times[2*time+0], t_end = times[2*time+1];
+
+        double t = t_begin;
+        while(t < t_end && num_intercepts < max_intercepts) {
+            struct intercept *intercept = intercepts + num_intercepts;
+            t = intercept_search(
+                orbit1, orbit2,
+                t, t_end,
+                threshold, target_distance,
+                max_steps, intercept);
+            if(intercept->distance <= threshold)
+                num_intercepts += 1;
+
+            // XXX: run intercept_search in loop until return value >= t_end
+            break;
+        }
+    }
+
+    return num_intercepts;
 }
