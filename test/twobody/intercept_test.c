@@ -22,7 +22,7 @@ void intercept_test(
         (-1.0 + 2.0*params[4]) * M_PI;
     double arg = (-1.0 + 2.0*params[5]) * M_PI;
     double E1 = (-1.0 + 2.0*params[6]) *
-        conic_closed(e1) ? M_PI : M_PI*0.75;
+        conic_closed(e1) ? M_PI : M_PI*0.5;
     double f1 = anomaly_eccentric_to_true(e1, E1);
 
     struct orbit orbit1;
@@ -39,7 +39,7 @@ void intercept_test(
 
     double e2 = params[7] * 2.0;
     double E2 = (-1.0 + 2.0*params[8]) *
-        conic_closed(e2) ? M_PI : M_PI*0.75;
+        conic_closed(e2) ? M_PI : M_PI*0.5;
     double f2 = anomaly_eccentric_to_true(e2, E2);
     double reli = (-1.0 + 2.0*params[8]) * M_PI;
     double p2 = r1 * (1.0 + e2 * cos(f2));
