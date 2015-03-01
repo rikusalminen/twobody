@@ -14,6 +14,7 @@ extern numtest_callback
     orbit_radial_test,
     stumpff_test,
     universal_test,
+    fg_test,
     dummy_test;
 
 const struct numtest_case numtest_cases[] = {
@@ -27,6 +28,7 @@ const struct numtest_case numtest_cases[] = {
     { "orbit_radial", orbit_radial_test, 5, 0 },
     { "stumpff", stumpff_test, 2, 0 },
     { "universal", universal_test, 5, 0 },
+    { "fg", fg_test, 5, 0 },
     { 0, 0, 0, 0 }
     };
 

@@ -141,3 +141,80 @@ double eccentric_ydot(double mu, double p, double e, double E) {
     else
         return sqrt(mu / (a*a*a)) * b*cos(E) / (1.0 - e*cos(E));
 }
+
+double eccentric_f(
+    double mu, double p, double e,
+    double r0,
+    double dE) {
+    (void)mu;
+    double a = conic_semi_major_axis(p, e);
+    double q = conic_periapsis(p, e);
+
+    if(conic_parabolic(e))
+        return 1.0 - q/r0 * dE*dE;
+    else if(conic_hyperbolic(e))
+        return 1.0 - a/r0 * (1.0 - cosh(dE));
+    else
+        return 1.0 - a/r0 * (1.0 - cos(dE));
+}
+
+double eccentric_g(
+    double mu, double p, double e,
+    double r0, double sigma0,
+    double dE) {
+    double a = conic_semi_major_axis(p, e);
+    double q = conic_periapsis(p, e);
+
+    if(conic_parabolic(e))
+        return r0 * sqrt(p/mu) * dE +
+            sigma0/sqrt(mu) * q * dE*dE;
+    else if(conic_hyperbolic(e))
+        return r0 * sqrt(-a/mu) * sinh(dE) +
+            sigma0/sqrt(mu) * a * (1.0 - cosh(dE));
+    else
+        return r0 * sqrt(a/mu) * sin(dE) +
+            sigma0/sqrt(mu) * a * (1.0 - cos(dE));
+}
+
+double eccentric_g_t(
+    double mu, double p, double e,
+    double dE, double dt) {
+    double a = conic_semi_major_axis(p, e);
+
+    if(conic_parabolic(e))
+        return dt - sqrt(p*p*p/mu) * (1.0/6.0) * dE*dE*dE;
+    else if(conic_hyperbolic(e))
+        return dt - sqrt(-a*a*a/mu) * (sinh(dE) - dE);
+    else
+        return dt - sqrt(a*a*a/mu) * (dE - sin(dE));
+}
+
+double eccentric_fdot(
+    double mu, double p, double e,
+    double r0, double r,
+    double dE) {
+    double a = conic_semi_major_axis(p, e);
+
+    if(conic_parabolic(e))
+        return -sqrt(mu*p)/(r*r0) * dE;
+    else if(conic_hyperbolic(e))
+        return -sqrt(mu*-a)/(r*r0) * sinh(dE);
+    else
+        return -sqrt(mu*a)/(r*r0) * sin(dE);
+}
+
+double eccentric_gdot(
+    double mu, double p, double e,
+    double r,
+    double dE) {
+    (void)mu;
+    double a = conic_semi_major_axis(p, e);
+    double q = conic_periapsis(p, e);
+
+    if(conic_parabolic(e))
+        return 1.0 - q/r * dE*dE;
+    else if(conic_hyperbolic(e))
+        return 1.0 - a/r * (1.0 - cosh(dE));
+    else
+        return 1.0 - a/r * (1.0 - cos(dE));
+}

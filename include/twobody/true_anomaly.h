@@ -18,4 +18,9 @@ double true_y(double p, double e, double f);
 double true_xdot(double mu, double p, double e, double f);
 double true_ydot(double mu, double p, double e, double f);
 
+double true_f(double mu, double p, double r0, double r, double df);
+double true_g(double mu, double p, double r0, double r, double df);
+double true_fdot(double mu, double p, double r0, double r, double df);
+double true_gdot(double mu, double p, double r0, double r, double df);
+
 #endif

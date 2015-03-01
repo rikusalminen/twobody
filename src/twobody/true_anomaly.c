@@ -51,3 +51,21 @@ double true_xdot(double mu, double p, double e, double f) {
 double true_ydot(double mu, double p, double e, double f) {
     return sqrt(mu / p) * (e + cos(f));
 }
+
+double true_f(double mu, double p, double r0, double r, double df) {
+    (void)mu; (void)r0;
+    return 1.0 - (r/p) * (1.0 - cos(df));
+}
+
+double true_g(double mu, double p, double r0, double r, double df) {
+    return r*r0/sqrt(mu*p) * sin(df);
+}
+
+double true_fdot(double mu, double p, double r0, double r, double df) {
+    return sqrt(mu/p) * tan(df/2.0) * ((1.0 - cos(df))/p - 1.0/r - 1.0/r0);
+}
+
+double true_gdot(double mu, double p, double r0, double r, double df) {
+    (void)mu; (void)r;
+    return 1.0 - r0/p * (1.0 - cos(df));
+}

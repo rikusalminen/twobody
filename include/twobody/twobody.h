@@ -9,6 +9,7 @@
 #include <twobody/orbit.h>
 #include <twobody/stumpff.h>
 #include <twobody/universal.h>
+#include <twobody/fg.h>
 
 const char *twobody_version();
 

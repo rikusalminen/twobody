@@ -51,6 +51,27 @@ double universal_sigma(
     double s,
     const double *cs);
 
+double universal_f(
+    double mu,
+    double r0,
+    double s, const double *cs);
+double universal_g(
+    double mu,
+    double r0, double sigma0,
+    double s, const double *cs);
+double universal_g_t(
+    double mu,
+    double dt,
+    double s, const double *cs);
+double universal_fdot(
+    double mu,
+    double r0, double r,
+    double s, const double *cs);
+double universal_gdot(
+    double mu,
+    double r,
+    double s, const double *cs);
+
 double universal_guess_s(
     double mu,
     double alpha,

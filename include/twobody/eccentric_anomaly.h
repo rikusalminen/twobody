@@ -20,4 +20,24 @@ double eccentric_y(double p, double e, double E);
 double eccentric_xdot(double mu, double p, double e, double E);
 double eccentric_ydot(double mu, double p, double e, double E);
 
+double eccentric_f(
+    double mu, double p, double e,
+    double r0,
+    double dE);
+double eccentric_g(
+    double mu, double p, double e,
+    double r0, double sigma0,
+    double dE);
+double eccentric_g_t(
+    double mu, double p, double e,
+    double dE, double dt);
+double eccentric_fdot(
+    double mu, double p, double e,
+    double r0, double r,
+    double dE);
+double eccentric_gdot(
+    double mu, double p, double e,
+    double r,
+    double dE);
+
 #endif

@@ -27,6 +27,7 @@ SRCS= \
 	src/twobody/orbit.c \
 	src/twobody/stumpff.c \
 	src/twobody/universal.c \
+	src/twobody/fg.c \
 	test/twobody/conic_test.c \
 	test/twobody/anomaly_test.c \
 	test/twobody/true_anomaly_test.c \
@@ -35,6 +36,7 @@ SRCS= \
 	test/twobody/orbit_test.c \
 	test/twobody/stumpff_test.c \
 	test/twobody/universal_test.c \
+	test/twobody/fg_test.c \
 	test/twobody/twobody_test.c \
 	test/numtest.c \
 	src/twobody/twobody.c
@@ -52,6 +54,7 @@ libtwobody.a: \
 	src/twobody/orbit.o \
 	src/twobody/stumpff.o \
 	src/twobody/universal.o \
+	src/twobody/fg.o \
 	src/twobody/twobody.o
 
 test/twobody/twobody_test: \
@@ -63,6 +66,7 @@ test/twobody/twobody_test: \
 	test/twobody/orbit_test.o \
 	test/twobody/stumpff_test.o \
 	test/twobody/universal_test.o \
+	test/twobody/fg_test.o \
 	test/twobody/twobody_test.o \
 	test/numtest.o \
 	libtwobody.a

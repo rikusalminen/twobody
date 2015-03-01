@@ -103,6 +103,43 @@ double universal_sigma(
     return sigma0 * cs[0] + (1.0 - alpha * r0) * s * cs[1];
 }
 
+double universal_f(
+    double mu,
+    double r0,
+    double s, const double *cs) {
+    (void)mu;
+    return 1.0 - 1/r0 * s*s * cs[2];
+}
+
+double universal_g(
+    double mu,
+    double r0, double sigma0,
+    double s, const double *cs) {
+    return (r0 * s * cs[1] + sigma0 * s*s * cs[2]) / sqrt(mu);
+}
+
+double universal_g_t(
+    double mu,
+    double dt,
+    double s, const double *cs) {
+    return dt - s*s*s * cs[3] / sqrt(mu);
+}
+
+double universal_fdot(
+    double mu,
+    double r0, double r,
+    double s, const double *cs) {
+    return - sqrt(mu)/(r0*r) * s * cs[1];
+}
+
+double universal_gdot(
+    double mu,
+    double r,
+    double s, const double *cs) {
+    (void)mu;
+    return 1.0 - 1/r * s*s * cs[2];
+}
+
 double universal_guess_s(
     double mu,
     double alpha,
