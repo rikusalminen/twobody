@@ -13,6 +13,7 @@ extern numtest_callback
     orbit_from_elements_test,
     orbit_radial_test,
     stumpff_test,
+    universal_test,
     dummy_test;
 
 const struct numtest_case numtest_cases[] = {
@@ -25,6 +26,7 @@ const struct numtest_case numtest_cases[] = {
     { "orbit_from_elements", orbit_from_elements_test, 6, 0 },
     { "orbit_radial", orbit_radial_test, 5, 0 },
     { "stumpff", stumpff_test, 2, 0 },
+    { "universal", universal_test, 5, 0 },
     { 0, 0, 0, 0 }
     };
 

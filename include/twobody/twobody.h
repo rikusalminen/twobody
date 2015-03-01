@@ -8,6 +8,7 @@
 #include <twobody/orientation.h>
 #include <twobody/orbit.h>
 #include <twobody/stumpff.h>
+#include <twobody/universal.h>
 
 const char *twobody_version();
 
