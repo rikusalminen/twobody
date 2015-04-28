@@ -164,7 +164,7 @@ double universal_iterate_s(
     double s0, double time,
     int max_steps) {
     if(max_steps <= 0)
-        max_steps = 30;
+        max_steps = 20;
 
     double threshold = DBL_EPSILON;
     double s = s0;
@@ -176,12 +176,19 @@ double universal_iterate_s(
 
         double t = universal_time(mu, r0, sigma0, s, cs);
         double r = universal_radius(r0, sigma0, s, cs);
-        double ds = sqrt(mu) * (time - t) / r;
+        double sigma = universal_sigma(alpha, r0, sigma0, s, cs);
+
+        double f0 = t - time;
+        double f1 = r / sqrt(mu);
+        double f2 = sigma / sqrt(mu);
+
+        double N = 5.0; // laguerre-conway magic constant
+        double ds = -N * f0 /
+            (f1 + sign(f1) * sqrt(fabs(square(N-1.0) * f1*f1 - N*(N-1.0) * f0*f2)));
+        s = s + ds;
 
         if(ds*ds < threshold)
             break;
-
-        s = s + ds;
     }
 
     return s;
