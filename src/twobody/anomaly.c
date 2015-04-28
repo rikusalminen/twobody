@@ -5,51 +5,9 @@
 #include <math.h>
 #include <float.h>
 
-static inline double anomaly_iter1(double e, double M, double x) {
-    return M + e * sin(x);
-}
-
-static inline double anomaly_iter2(double e, double M, double x) {
-    return x + (M + e * sin(x) - x) / (1.0 - e * cos(x));
-}
-
-static inline double anomaly_iter3(double e, double M, double x) {
-    double s = e * sin(x);
-    double c = e * cos(x);
-    double f0 = x - s - M;
-    double f1 = 1.0 - c;
-    double f2 = s;
-
-    return x + (-5.0) * f0 /
-        (f1 + sign(f1) * sqrt(fabs(16.0 * f1 * f1 - 20.0 * f0 * f2)));
-}
-
-static inline double anomaly_iter4(double e, double M, double x) {
-    double s = e * sinh(x);
-    double c = e * cosh(x);
-    double f0 = s - x - M;
-    double f1 = c - 1.0;
-    double f2 = s;
-
-    return x + (-5.0) * f0 /
-        (f1 + sign(f1) * sqrt(fabs(16.0 * f1 * f1 - 20.0 * f0 * f2)));
-}
-
 double anomaly_eccentric_iterate(double e, double M, double E0, int max_steps) {
-    typedef double (*iter_func)(double, double, double);
-    iter_func iter = 0;
-    if(e < 0.3) iter = anomaly_iter1;
-    else if(e < 0.9) iter = anomaly_iter2;
-    else if(e < 1.0) iter = anomaly_iter3;
-    else iter = anomaly_iter4;   // e > 1.0
-
-    int num_steps = 10;
-    if(max_steps > 0) num_steps = max_steps;
-    else if(e > 0.0 && e < 0.3) num_steps = 10;
-    else if(e < 0.9) num_steps = 20;
-    else if(e < 1.0) num_steps = 20;
-    else num_steps = 31;    // e > 1.0
-
+    if(max_steps <= 0)
+        max_steps = e < 1.0 ? 10 : 20;
     double threshold = DBL_EPSILON;
 
     double Mperiod = 0.0;
@@ -61,13 +19,30 @@ double anomaly_eccentric_iterate(double e, double M, double E0, int max_steps) {
         E0 = E0 - Mperiod;
     }
 
-    double x = E0, x0 = x;
-    do {
-        x0 = x;
-        x = iter(e, M, x);
-    } while(--num_steps >= 0 && (x0-x)*(x0-x) > threshold);
+    double E = E0;
+    for(int step = 0; step < max_steps; ++step) {
+        double f0, f1, f2;
 
-    return x + Mperiod;
+        if(e < 1.0) { // elliptic
+            f0 = E - e*sin(E) - M;
+            f1 = 1.0 - e*cos(E);
+            f2 = e*sin(E);
+        } else { // hyperbolic
+            f0 = e*sinh(E) - E - M;
+            f1 = e*cosh(E) - 1.0;
+            f2 = e*sinh(E);
+        }
+
+        double N = 5.0; // laguerre-conway magic constant
+        double dE = -N * f0 /
+            (f1 + sign(f1) * sqrt(fabs(square(N-1.0) * f1*f1 - N*(N-1.0) * f0*f2)));
+        E = E + dE;
+
+        if(dE*dE < threshold)
+            break;
+    }
+
+    return E + Mperiod;
 }
 
 double anomaly_mean_to_eccentric(double e, double M) {
