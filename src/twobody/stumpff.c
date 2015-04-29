@@ -84,7 +84,7 @@ double stumpff_series(int k, double z) {
     return sum;
 }
 
-void stumpff_fast(double z, double *cs) {
+void stumpff_quad(double z, double *cs) {
     double z_min = 0.1;
     int n = 0;
 
@@ -105,4 +105,8 @@ void stumpff_fast(double z, double *cs) {
     }
 
     cs[0] = c0; cs[1] = c1; cs[2] = c2; cs[3] = c3;
+}
+
+void stumpff_fast(double z, double *cs) {
+    *(vec4d*)cs = stumpff_simd(z);
 }

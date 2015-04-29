@@ -86,7 +86,7 @@ void stumpff_test(
             "Stumpff fast series and series c%d are equal", i);
 
     double cs_four[4];
-    stumpff_fast(4.0 * z, cs_four);
+    stumpff_quad(4.0 * z, cs_four);
 
     // quadruple angle formulae
     ASSERT_EQF(cs_four[0], 2.0*cs[0]*cs[0] - 1.0,
