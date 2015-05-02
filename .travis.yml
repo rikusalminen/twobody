@@ -3,8 +3,8 @@ compiler:
   - gcc
   - clang
 script:
-  - make
-  - ./test/twobody/twobody_test
+  - make DEBUG=1
+  - ./test/twobody/twobody_test stumpff universal
 
 notifications:
   email: false
