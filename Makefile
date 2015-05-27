@@ -28,6 +28,7 @@ SRCS= \
 	src/twobody/stumpff.c \
 	src/twobody/universal.c \
 	src/twobody/fg.c \
+	src/twobody/gauss.c \
 	test/twobody/conic_test.c \
 	test/twobody/anomaly_test.c \
 	test/twobody/true_anomaly_test.c \
@@ -37,6 +38,7 @@ SRCS= \
 	test/twobody/stumpff_test.c \
 	test/twobody/universal_test.c \
 	test/twobody/fg_test.c \
+	test/twobody/gauss_test.c \
 	test/twobody/twobody_test.c \
 	test/numtest.c \
 	src/twobody/twobody.c
@@ -55,6 +57,7 @@ libtwobody.a: \
 	src/twobody/stumpff.o \
 	src/twobody/universal.o \
 	src/twobody/fg.o \
+	src/twobody/gauss.o \
 	src/twobody/twobody.o
 
 test/twobody/twobody_test: \
@@ -67,6 +70,7 @@ test/twobody/twobody_test: \
 	test/twobody/stumpff_test.o \
 	test/twobody/universal_test.o \
 	test/twobody/fg_test.o \
+	test/twobody/gauss_test.o \
 	test/twobody/twobody_test.o \
 	test/numtest.o \
 	libtwobody.a
