@@ -33,4 +33,13 @@ void gauss_test(
     double M2 = anomaly_eccentric_to_mean(e, E2);
     double t2 = t0 + M2 / n;
     double r2 = eccentric_radius(p, e, E2);
+
+    if(ZEROF(e - 1.0) || E2 <= E1) // XXX: change inputs
+        return;
+
+    double z0 = f2-f1;
+    double z = gauss_iterate_z(mu, r1, r2, f2-f1, t2-t1, z0, 30);
+
+    ASSERT_EQF(z, (E2-E1)*(E2-E1),
+        "z = dE^2");
 }
