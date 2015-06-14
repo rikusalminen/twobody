@@ -29,7 +29,7 @@ void gauss_test(
     double r1 = eccentric_radius(p, e, E1);
 
     double E2 = e < 1.0 ?
-        E1 + (0.1 + params[4] * 1.9) * M_PI :
+        E1 + (0.1 + params[4] * 0.9) * M_PI :
         E1 + (M_PI - E1) * (0.1 + params[4] * 0.9);
     double f2 = anomaly_eccentric_to_true(e, E2);
     double M2 = anomaly_eccentric_to_mean(e, E2);
