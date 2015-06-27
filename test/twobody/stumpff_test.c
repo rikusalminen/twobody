@@ -69,6 +69,68 @@ void stumpff_test(
         ASSERT_EQF(cs[i], cs_fun[i],
             "Stumpff function and series c%d are equal", i);
 
+    // test Stumpff derivatives (trigonometric)
+    double cs_dz[4] = {
+        stumpff_dc0dz(alpha, s),
+        stumpff_dc1dz(alpha, s),
+        stumpff_dc2dz(alpha, s),
+        stumpff_dc3dz(alpha, s)
+    };
+
+    for(int i = 0; i < 4; ++i)
+        ASSERT(isfinite(cs_dz[i]),
+            "Stumpff derivative function c%d not NaN", i);
+
+    for(int i = 0; i < 4; ++i) {
+        double dz = 1.0e-5;
+        double zplus = z + dz, zminus = z - dz;
+
+        double cplus = stumpff_series(i, zplus);
+        double cminus = stumpff_series(i, zminus);
+        double dc = cplus - cminus;
+        double dcdz = cs_dz[i];
+        double dcf = 2.0 * dcdz * dz;
+
+        if(fabs(z) >= 1.0e-4) // accuracy is bad for small z
+            ASSERT_EQF(dcf, dc,
+                "d/dz c%d(z) function", i);
+        else
+            ASSERT(ZEROF((dcf-dc)*(dcf-dc)),
+                "d/dz c%d(z) function (near zero)", i);
+    }
+
+    // test Stumpff derivatives (series)
+    double cs_dz_s[4];
+    for(int i = 0; i < 4; ++i)
+        cs_dz_s[i] = stumpff_series_dcdz(i, z);
+
+    for(int i = 0; i < 4; ++i)
+        ASSERT(isfinite(cs_dz_s[i]),
+            "Stumpff derivative series c%d not NaN", i);
+
+    for(int i = 0; i < 4; ++i) {
+        if(fabs(z) >= 1.0e-4) // accuracy is bad for small z
+            ASSERT_EQF(cs_dz_s[i], cs_dz[i],
+                "Stumpff derivative function and series c%d are equal", i);
+        else
+            ASSERT(fabs(cs_dz_s[i]-cs_dz[i])/cs_dz_s[i] < 1.0e-5,
+                "Stumpff derivative function and series c%d are equal"
+                " (near zero)", i);
+    }
+
+    for(int i = 0; i < 4; ++i) {
+        double dz = 1.0e-4;
+        double zplus = z + dz, zminus = z - dz;
+
+        double cplus = stumpff_series(i, zplus);
+        double cminus = stumpff_series(i, zminus);
+        double dc = cplus - cminus;
+        double dcdz = cs_dz_s[i];
+
+        ASSERT_EQF(2.0 * dcdz * dz, dc,
+            "d/dz c%d(z) series", i);
+    }
+
     // test fast Stumpff series
     double cs_fast[4];
     stumpff_fast(z, cs_fast);
