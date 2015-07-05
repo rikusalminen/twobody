@@ -5,82 +5,68 @@
 #include <float.h>
 #include <stdbool.h>
 
-double stumpff_c0(double alpha, double s) {
-    double z = alpha * s*s;
+double stumpff_c0(double z) {
     double sqrtz = sqrt(fabs(z));
 
     if(zero(z))             // zero
         return 1.0;
-    else if(zero(alpha))    // parabolic
-        return 1.0;
-    else if(alpha < 0.0)    // hyperbolic
+    else if(z < 0.0)    // hyperbolic
         return cosh(sqrtz);
     else                    // elliptic
         return cos(sqrtz);
 
 }
 
-double stumpff_c1(double alpha, double s) {
-    double z = alpha * s*s;
+double stumpff_c1(double z) {
     double sqrtz = sqrt(fabs(z));
 
     if(zero(z))             // zero
         return 1.0; // XXX: 1.0 or 0.0?
-    else if(zero(alpha))     // parabolic
-        return s;
-    else if(alpha < 0.0)    // hyperbolic
+    else if(z < 0.0)    // hyperbolic
         return sinh(sqrtz) / sqrtz;
     else                    // elliptic
         return sin(sqrtz) / sqrtz;
 }
 
-double stumpff_c2(double alpha, double s) {
-    double z = alpha * s*s;
+double stumpff_c2(double z) {
     double sqrtz = sqrt(fabs(z));
 
     if(zero(z))             // zero
         return 1.0 / 2.0;
-    else if(zero(alpha))    // parabolic
-        return s*s / 2.0;
-    else if(alpha < 0.0)    // hyperbolic
+    else if(z < 0.0)    // hyperbolic
         return (cosh(sqrtz) - 1.0) / -z;
     else                    // elliptic
         return (1.0 - cos(sqrtz)) / z;
 }
 
-double stumpff_c3(double alpha, double s) {
-    double z = alpha * s*s;
+double stumpff_c3(double z) {
     double sqrtz = sqrt(fabs(z));
 
     if(zero(z))             // zero
         return 1.0 / 6.0;
-    else if(zero(alpha))    // parabolic
-        return s*s*s / 6.0;
-    else if(alpha < 0.0)    // hyperbolic
+    else if(z < 0.0)    // hyperbolic
         return (sinh(sqrtz) - sqrtz) / (-z * sqrtz);
     else                    // elliptic
         return (sqrtz - sin(sqrtz)) / (z * sqrtz);
 }
 
-double stumpff_dc0dz(double alpha, double s) {
-    double z = alpha * s*s;
+double stumpff_dc0dz(double z) {
     double sqrtz = sqrt(fabs(z));
 
     if(zero(z))             // zero
         return -1.0/2.0;
-    else if(alpha < 0.0)    // hyperbolic
+    else if(z < 0.0)    // hyperbolic
         return -sinh(sqrtz)/(2.0*sqrtz);
     else                    // elliptic
         return -sin(sqrtz)/(2.0*sqrtz);
 }
 
-double stumpff_dc1dz(double alpha, double s) {
-    double z = alpha * s*s;
+double stumpff_dc1dz(double z) {
     double sqrtz = sqrt(fabs(z));
 
     if(zero(z))             // zero
         return -1.0/6.0;
-    else if(alpha < 0.0)    // hyperbolic
+    else if(z < 0.0)    // hyperbolic
         return sinh(sqrtz) / (2.0 * pow(-z, 3.0/2.0)) +
             cosh(sqrtz) / (2.0 * z);
     else                    // elliptic
@@ -88,26 +74,24 @@ double stumpff_dc1dz(double alpha, double s) {
             sin(sqrtz) / (2.0 * pow(z, 3.0/2.0));
 }
 
-double stumpff_dc2dz(double alpha, double s) {
-    double z = alpha * s*s;
+double stumpff_dc2dz(double z) {
     double sqrtz = sqrt(fabs(z));
 
     if(zero(z))             // zero
         return -1.0/24.0;
-    else if(alpha < 0.0)    // hyperbolic
+    else if(z < 0.0)    // hyperbolic
         return (cosh(sqrtz) - 1.0) / (z*z) +
             sinh(sqrtz) / (2.0 * sqrtz * z);
     else                    // elliptic
         return (sqrtz * sin(sqrtz) + 2.0 * cos(sqrtz) - 2.0) / (2.0 * z*z);
 }
 
-double stumpff_dc3dz(double alpha, double s) {
-    double z = alpha * s*s;
+double stumpff_dc3dz(double z) {
     double sqrtz = sqrt(fabs(z));
 
     if(zero(z))             // zero
         return -1.0/120.0;
-    else if(alpha < 0.0)    // hyperbolic
+    else if(z < 0.0)    // hyperbolic
         return (sinh(sqrtz) - sqrtz) / (sqrtz * z*z) -
             (sinh(sqrtz) - sqrtz) / (2.0 * pow(-z, 3.0/2.0) * z) -
             (1.0/(2.0*sqrtz) - cosh(sqrtz)/(2.0*sqrtz)) / (sqrtz * z);

@@ -51,10 +51,10 @@ void stumpff_test(
 
     // test Stumpff functions (trigonometric)
     double cs_fun[4]  = {
-        stumpff_c0(alpha, s),
-        stumpff_c1(alpha, s),
-        stumpff_c2(alpha, s),
-        stumpff_c3(alpha, s)
+        stumpff_c0(z),
+        stumpff_c1(z),
+        stumpff_c2(z),
+        stumpff_c3(z)
     };
 
     for(int i = 0; i < 4; ++i)
@@ -71,10 +71,10 @@ void stumpff_test(
 
     // test Stumpff derivatives (trigonometric)
     double cs_dz[4] = {
-        stumpff_dc0dz(alpha, s),
-        stumpff_dc1dz(alpha, s),
-        stumpff_dc2dz(alpha, s),
-        stumpff_dc3dz(alpha, s)
+        stumpff_dc0dz(z),
+        stumpff_dc1dz(z),
+        stumpff_dc2dz(z),
+        stumpff_dc3dz(z)
     };
 
     for(int i = 0; i < 4; ++i)
