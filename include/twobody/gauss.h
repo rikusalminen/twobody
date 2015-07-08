@@ -7,6 +7,8 @@ double gauss_iterate_z(
     double df,
     double dt,
     double z0,
+    double *f, double *g,
+    double *fdot, double *gdot,
     int max_iterations);
 
 #endif

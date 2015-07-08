@@ -37,9 +37,25 @@ void gauss_test(
     double r2 = eccentric_radius(p, e, E2);
 
     double z0 = f2-f1;
-    double z = gauss_iterate_z(mu, r1, r2, f2-f1, t2-t1, z0, 30);
+    double f, g, fdot, gdot;
+    double z = gauss_iterate_z(
+        mu, r1, r2, f2-f1, t2-t1, z0,
+        &f, &g, &fdot, &gdot,
+        30);
+    double zE = (E2-E1)*(E2-E1) * (e < 1.0 ? 1.0 : -1.0);
 
     ASSERT(isfinite(z), "z not NaN");
-    ASSERT_EQF(z, (E2-E1)*(E2-E1),
+    ASSERT_EQF(z, zE,
         "z = dE^2");
+
+    double sigma1 = r1 * eccentric_velocity_radial(mu, p, e, E1) / sqrt(mu);
+    double fE = eccentric_f(mu, p, e, r1, E2-E1);
+    double gE = eccentric_g(mu, p, e, r1, sigma1, E2-E1);
+    double fdotE = eccentric_fdot(mu, p, e, r1, r2, E2-E1);
+    double gdotE = eccentric_gdot(mu, p, e, r2, E2-E1);
+
+    ASSERT_EQF(f, fE, "Lagrangian coefficient f is equal");
+    ASSERT_EQF(g, gE, "Lagrangian coefficient gdot is equal");
+    ASSERT_EQF(fdot, fdotE, "Lagrangian coefficient fdot is equal");
+    ASSERT_EQF(gdot, gdotE, "Lagrangian coefficient gdot is equal");
 }
