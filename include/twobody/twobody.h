@@ -10,6 +10,7 @@
 #include <twobody/stumpff.h>
 #include <twobody/universal.h>
 #include <twobody/fg.h>
+#include <twobody/gauss.h>
 
 const char *twobody_version();
 
