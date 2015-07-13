@@ -173,7 +173,7 @@ int intercept_times(
         double t_pe = orbit_periapsis_time(orbits[o]);
         double n = conic_mean_motion(mu, p, e);
 
-        double f_t0 = -M_PI, f_t1 = M_PI;
+        double f_t0 = -2.0 * M_PI, f_t1 = M_PI;
         if(!conic_closed(e)) {
             // restrict true anomaly to range within time (t0..t1)
             double M_t0 = (t0 - t_pe) * n, M_t1 = (t1 - t_pe) * n;
