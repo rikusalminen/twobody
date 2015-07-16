@@ -284,7 +284,7 @@ int intercept_dump(
 
     FILE *file = fopen("intercept_distance.txt", "w");
 
-    int max_steps = 100;
+    int max_steps = 1000;
     for(int i = 0; i < max_steps; ++i) {
         double t = t0 + (i / (double)(max_steps-1)) * (t1-t0);
 
@@ -316,8 +316,10 @@ double intercept_search(
     int max_steps,
     struct intercept *intercept) {
 
-    //max_steps = 50; // XXX: !!!
-    //intercept_dump(orbit1, orbit2, t0, t1);
+//#define INTERCEPT_DEBUG
+#ifdef INTERCEPT_DEBUG
+    intercept_dump(orbit1, orbit2, t0, t1);
+#endif
 
     double mu = orbit_gravity_parameter(orbit1);
 
@@ -349,8 +351,9 @@ double intercept_search(
     //vec4d nodes = cross(orbit1->normal_axis, orbit2->normal_axis);
     //int coplanar = dot(nodes, nodes) < DBL_EPSILON;
 
-    vec4d pos[2], vel[2];
-    vec4d dr, dv;
+    vec4d pos[2] = {{ NAN, NAN, NAN, NAN}, { NAN, NAN, NAN, NAN}};
+    vec4d vel[2] = {{ NAN, NAN, NAN, NAN}, { NAN, NAN, NAN, NAN}};
+    vec4d dr = { NAN, NAN, NAN, NAN}, dv = { NAN, NAN, NAN, NAN};
     double dist = NAN, vrel = NAN;
     double E[2] = { // eccentric anomaly, initialize to mean anomaly at t0
         (t0 - t_pe[0]) * n[0],
@@ -359,9 +362,11 @@ double intercept_search(
 
     double min_dt = (t1-t0) / (max_steps/2);
 
-    //FILE *file = fopen("intercept_steps.txt", "w");
+#ifdef INTERCEPT_DEBUG
+    FILE *file = fopen("intercept_steps.txt", "w");
+#endif
 
-    double t = t0, prev_time = NAN, t_end = t1;
+    double t = t0, prev_time = NAN, t_end = t0;
     int prev_sgn = 0;
     for(int step = 0; step < max_steps; ++step) {
         for(int o = 0; o < 2; ++o) {
@@ -385,27 +390,38 @@ double intercept_search(
         vrel = dot(dr, dv) / dist;
         int sgn = sign(vrel) * sign(dist - target_distance);
 
-        //fprintf(file, "%d\t%lf\t%lf\t%lf\n", step, t, dist, vrel);
+#ifdef INTERCEPT_DEBUG
+        fprintf(file, "%d\t%lf\t%lf\t%lf\n", step, t, dist, vrel);
+#endif
 
         double dt = min_dt;
 
-        //printf("[%03d] t: %3.3lf\tdist: %3.3lf\tvrel: %3.3lf\n", step, t, dist, vrel);
+#ifdef INTERCEPT_DEBUG
+        printf("[%03d] t: %3.3lf\tdist: %3.3lf\tvrel: %3.3lf\n", step, t, dist, vrel);
+#endif
 
         if(zero(square(dist - fmax(0.0, target_distance))/square(threshold))) {
             // minimization finished
-            //printf("[%03d] minimization finished\n", step);
-            // XXX: t_end?!
+#ifdef INTERCEPT_DEBUG
+            printf("[%03d] minimization finished\n", step);
+#endif
+            t_end = fmax(t_end, t + min_dt);
             break;
-        } else if(sgn < 0 && dist < threshold && t_end > t0) {
+        } else if(sgn < 0 && fabs(dist-target_distance) < threshold) {
             // below threshold, do minimization step
-            //printf("[%03d] minimization step\n", step);
-            dt = (target_distance - dist) / vrel;
-            break;
+#ifdef INTERCEPT_DEBUG
+            printf("[%03d] minimization step\n", step);
+#endif
+            double next = t + (target_distance - dist) / vrel;
+            dt = fmax(fmin(next - t, (t1 - t)/2.0), (t0-t)/2.0);
+            //break;
         } else if(sgn > 0 && prev_sgn < 0 &&
-            (t-prev_time)*vmax + threshold > fabs(dist - target_distance) &&
-            (t-prev_time) > (t1-t_end)/(max_steps - step)) {
+            (t-prev_time)*vmax + threshold > fabs(dist - target_distance)
+            && (t-prev_time) > (t1-t1)/(max_steps - step)) {
             // closest approach found, move time backwards and adjust time step
-            //printf("[%03d] sign change, t: %lf\tprev_time: %lf\tmin_dt: %lf\n", step, t, prev_time, min_dt);
+#ifdef INTERCEPT_DEBUG
+            printf("[%03d] sign change, t: %lf\tprev_time: %lf\tmin_dt: %lf\n", step, t, prev_time, min_dt);
+#endif
 
             t_end = fmax(t, t_end);
             min_dt = (t - prev_time) / 2;
@@ -415,7 +431,9 @@ double intercept_search(
             sgn = prev_sgn;
         } else if(t > t1) {
             // search exhausted
-            //printf("[%03d] search exhausted t: %lf\n", step, t);
+#ifdef INTERCEPT_DEBUG
+            printf("[%03d] search exhausted t: %lf\n", step, t);
+#endif
             break;
         } else {
             // searching, skip ahead in time
@@ -425,14 +443,18 @@ double intercept_search(
                 fabs((dist - target_distance)-threshold) / vmax,
                 // distance at relative velocity + max acceleration (may be NaN)
                 // 1/2 amax * t^2 + vrel t + (distance-target_distance) = 0
-                //(vrel + sqrt(vrel*vrel - 4.0*amax*(dist-target_distance))) / amax,
+                (vrel + sqrt(vrel*vrel - 4.0*amax*(dist-target_distance))) / amax,
             };
+
+            (void)amax; // XXX:
 
             for(unsigned i = 0; i < sizeof(deltas)/sizeof(double); ++i)
                 if(isfinite(deltas[i]))
                     dt = fmax(dt, deltas[i]);
 
-            //printf("[%03d] skip ahead %2.2lfx, t: %3.3lf\n", step, dt/min_dt, t);
+#ifdef INTERCEPT_DEBUG
+            printf("[%03d] skip ahead %2.2lfx, t: %3.3lf\n", step, dt/min_dt, t);
+#endif
 
         }
 
@@ -464,7 +486,9 @@ double intercept_search(
     intercept->E1 = E[0]; intercept->E2 = E[1];
     intercept->xxx1 = NAN; intercept->xxx2 = NAN;
 
-    //fclose(file);
+#ifdef INTERCEPT_DEBUG
+    fclose(file);
+#endif
 
     return t_end; // XXX: return value?
 }
