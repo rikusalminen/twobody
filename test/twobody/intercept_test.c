@@ -6,6 +6,23 @@
 
 #include "../numtest.h"
 
+#include <twobody/orientation.h>
+#include <stdio.h>
+int orbit_dump(const struct orbit *orbit, int suffix) {
+    printf(
+        "p%d = %lf ; "
+        "e%d = %lf ; "
+        "i%d = %lf ; "
+        "an%d = %lf ; "
+        "argp%d = %lf\n",
+        suffix, orbit_semi_latus_rectum(orbit),
+        suffix, orbit_eccentricity(orbit),
+        suffix, orientation_inclination(orbit->major_axis, orbit->minor_axis, orbit->normal_axis),
+        suffix, orientation_longitude_of_ascending_node(orbit->major_axis, orbit->minor_axis, orbit->normal_axis),
+        suffix, orientation_argument_of_periapsis(orbit->major_axis, orbit->minor_axis, orbit->normal_axis));
+    return 0;
+}
+
 void intercept_test(
     double *params,
     int num_params,
@@ -155,21 +172,53 @@ void intercept_test(
     ASSERT(time_interval >= 0 && time_interval < ts,
         "Intercept time interval found");
 
-    if(time_interval == -1) return;
+    if(time_interval == -1)
+        return;
 
     t0 = times[time_interval*2+0]; t1 = times[time_interval*2+1];
 
-    int search_steps = 30;
-    double target_distance = 0.0;
-    struct intercept intercept;
-    double t_end = intercept_search(
-        &orbit1, &orbit2,
-        t0, t1,
-        threshold, target_distance,
-        search_steps,
-        &intercept);
-    (void)t_end; // TODO: loop over range and search for correct intercept?
+    //orbit_dump(&orbit1, 1); // XXX: !!!
+    //orbit_dump(&orbit2, 2);
 
-    ASSERT_LTF(intercept.distance, threshold,
-        "Intercept distance is less than threshold");
+    int intercept_found = 0;
+    for(int i = 0; i < 2 && !intercept_found && t0 < t1; ++i) {
+        int search_steps = 30;
+        double target_distance = 0.0;
+        struct intercept intercept;
+        double t_end = intercept_search(
+            &orbit1, &orbit2,
+            t0, t1,
+            threshold, target_distance,
+            search_steps,
+            &intercept);
+
+        ASSERT_LTF(intercept.distance, threshold,
+            "Intercept distance is less than threshold");
+
+        ASSERT_RANGEF(intercept.time, t0, t1,
+            "Intercept time in t0..t1");
+
+        ASSERT(t0 < t_end,
+            "intercept search has made progress");
+
+        if(((conic_circular(e1) && conic_circular(e2)) ||
+            (EQF(e1,e2) && EQF(p1, p2))) &&
+            zero(fabs(dot(orbit1.normal_axis, orbit2.normal_axis)) - 1.0)) {
+            // circular or equal ellipses AND coplanar
+            intercept_found = 1;
+        } else if(EQF(intercept.time, t)) {
+            intercept_found = 1;
+
+            /*
+            ASSERT_EQF(intercept.E1, E1,
+                "Eccentric anomaly for orbit 1 is correct");
+            ASSERT_EQF(intercept.E2, E2,
+                "Eccentric anomaly for orbit 2 is correct");
+                */
+        }
+
+        t0 = t_end;
+    }
+
+    ASSERT(intercept_found, "intercept found");
 }
