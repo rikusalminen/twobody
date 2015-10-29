@@ -4,8 +4,11 @@ compiler:
   - gcc
   - clang
 env:
-  - DEBUG=1 CFLAGS="-ftest-coverage -fprofile-arcs" LDFLAGS=-coverage LDLIBS=-lgcov
-  - DEBUG=0
+  matrix:
+    - DEBUG=1 CFLAGS="-ftest-coverage -fprofile-arcs" LDFLAGS=-coverage LDLIBS=-lgcov
+    - DEBUG=0
+  global:
+    secure: cHGmun6LqGyh0DB19BUyHu7fez02wvpV320vZ1cvT1p9wXubRtXihddT5ZxH/MP7PeDk7fdcqREkxyuz5YeIuiokbtb3WavQkLRzKkt4ww/Rs4HmmXGwFaVEvfFAgVV2rbBFs5UPcQxfx/X29PQSTYkT6kpdvbMpsJSODR3EVbI=
 before_install:
   - pip install --user cpp-coveralls
 script:
@@ -15,3 +18,9 @@ after_success:
   - if [ "$DEBUG" = 1 ] ; then ~/.local/bin/coveralls --exclude test --gcov-options '\-lp' ; fi
 notifications:
   email: false
+addons:
+  coverity_scan:
+    project:
+      name: "rikusalminen/twobody"
+      description: "Build submitted via Travis CI"
+    build_command: "make"
