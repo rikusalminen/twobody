@@ -1,10 +1,17 @@
 language: c
+sudo: false
 compiler:
   - gcc
   - clang
+env:
+  - DEBUG=1 CFLAGS="-ftest-coverage -fprofile-arcs" LDFLAGS=-coverage LDLIBS=-lgcov
+  - DEBUG=0
+before_install:
+  - pip install --user cpp-coveralls
 script:
   - make
   - ./test/twobody/twobody_test
-
+after_success:
+  - if [ "$DEBUG" = 1 ] ; then ~/.local/bin/coveralls --exclude test --gcov-options '\-lp' ; fi
 notifications:
   email: false
