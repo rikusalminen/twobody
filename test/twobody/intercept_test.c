@@ -222,7 +222,8 @@ void intercept_test(
                 (dot(intercept.relative_velocity, intercept.relative_position) /
                     intercept.distance),
                 intercept.speed,
-                "Intercept speed is magnitude of relative velocity");
+                "Intercept speed is scalar projection of relative "
+                "velocity and position");
 
         int coplanar = zero(dot(orbit1.normal_axis, orbit2.normal_axis) - 1.0);
         int coapsis = zero(dot(orbit1.major_axis, orbit2.major_axis) - 1.0);
@@ -234,10 +235,12 @@ void intercept_test(
             coplanar) {
             // circular and coplanar (or retrograde coplanar)
             intercept_found = 1;
+            break;
         } else if(EQF(e1,e2) && EQF(p1, p2) &&
             periapsis_eq && coplanar && coapsis) {
             // equal conic sections, coplanar and equal periapsis time and pos
             intercept_found = 1;
+            break;
         } else if(EQF(intercept.time, t)) {
             intercept_found = 1;
 
@@ -245,6 +248,17 @@ void intercept_test(
                 "Eccentric anomaly for orbit 1 is correct");
             ASSERT(angle_eq(intercept.E2, E2),
                 "Eccentric anomaly for orbit 2 is correct");
+        }
+
+        if(intercept_found) {
+            ASSERT(mag(pos1 - intercept.position[0]) < threshold,
+                "Intercept position 1 is correct");
+            ASSERT(mag(pos2 - intercept.position[1]) < threshold,
+                "Intercept position 2 is correct");
+
+            //vec4d vel1 = orbit_velocity_eccentric(&orbit1, E1);
+            //ASSERT(mag(vel1 - intercept.velocity[0]) < threshold,
+                //"Intercept velocity 1 is correct");
         }
 
         t0 = t_end;
