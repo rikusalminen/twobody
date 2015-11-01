@@ -209,6 +209,21 @@ void intercept_test(
         ASSERT(t0 < t_end,
             "intercept search has made progress");
 
+        ASSERT(eqv4d(intercept.position[1] - intercept.position[0],
+                intercept.relative_position),
+            "Intercept relative position");
+        ASSERT(eqv4d(intercept.velocity[1] - intercept.velocity[0],
+                intercept.relative_velocity),
+            "Intercept relative velocity");
+        ASSERT_EQF(mag(intercept.relative_position), intercept.distance,
+            "Intercept distance is magnitude of relative position");
+        if(!zero(intercept.distance))
+            ASSERT_EQF(
+                (dot(intercept.relative_velocity, intercept.relative_position) /
+                    intercept.distance),
+                intercept.speed,
+                "Intercept speed is magnitude of relative velocity");
+
         int coplanar = zero(dot(orbit1.normal_axis, orbit2.normal_axis) - 1.0);
         int coapsis = zero(dot(orbit1.major_axis, orbit2.major_axis) - 1.0);
         int periapsis_eq = zero(
