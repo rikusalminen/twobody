@@ -23,6 +23,13 @@ int orbit_dump(const struct orbit *orbit, int suffix) {
     return 0;
 }
 
+static inline int angle_eq(double a, double b) {
+    double diff = angle_clamp(a) - angle_clamp(b);
+    if(fabs(diff) > M_PI)
+        diff = 2.0*M_PI - fabs(diff);
+    return zero(diff*diff);
+}
+
 void intercept_test(
     double *params,
     int num_params,
@@ -180,8 +187,9 @@ void intercept_test(
     //orbit_dump(&orbit1, 1); // XXX: !!!
     //orbit_dump(&orbit2, 2);
 
+    // NOTE: at most 4 intercepts in search interval when coplanar and retrograde
     int intercept_found = 0;
-    for(int i = 0; i < 2 && !intercept_found && t0 < t1; ++i) {
+    for(int i = 0; i < 4 && !intercept_found && t0 < t1; ++i) {
         int search_steps = 30;
         double target_distance = 0.0;
         struct intercept intercept;
@@ -201,20 +209,27 @@ void intercept_test(
         ASSERT(t0 < t_end,
             "intercept search has made progress");
 
-        if(((conic_circular(e1) && conic_circular(e2)) ||
-            (EQF(e1,e2) && EQF(p1, p2))) &&
-            zero(fabs(dot(orbit1.normal_axis, orbit2.normal_axis)) - 1.0)) {
-            // circular or equal ellipses AND coplanar
+        int coplanar = zero(dot(orbit1.normal_axis, orbit2.normal_axis) - 1.0);
+        int coapsis = zero(dot(orbit1.major_axis, orbit2.major_axis) - 1.0);
+        int periapsis_eq = zero(
+            square(orbit1.periapsis_time - orbit2.periapsis_time) /
+            square(t1-t0));
+
+        if(conic_circular(e1) && conic_circular(e2) &&
+            coplanar) {
+            // circular and coplanar (or retrograde coplanar)
+            intercept_found = 1;
+        } else if(EQF(e1,e2) && EQF(p1, p2) &&
+            periapsis_eq && coplanar && coapsis) {
+            // equal conic sections, coplanar and equal periapsis time and pos
             intercept_found = 1;
         } else if(EQF(intercept.time, t)) {
             intercept_found = 1;
 
-            /*
-            ASSERT_EQF(intercept.E1, E1,
+            ASSERT(angle_eq(intercept.E1, E1),
                 "Eccentric anomaly for orbit 1 is correct");
-            ASSERT_EQF(intercept.E2, E2,
+            ASSERT(angle_eq(intercept.E2, E2),
                 "Eccentric anomaly for orbit 2 is correct");
-                */
         }
 
         t0 = t_end;
