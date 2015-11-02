@@ -235,12 +235,10 @@ void intercept_test(
             coplanar) {
             // circular and coplanar (or retrograde coplanar)
             intercept_found = 1;
-            break;
         } else if(EQF(e1,e2) && EQF(p1, p2) &&
             periapsis_eq && coplanar && coapsis) {
             // equal conic sections, coplanar and equal periapsis time and pos
             intercept_found = 1;
-            break;
         } else if(EQF(intercept.time, t)) {
             intercept_found = 1;
 
@@ -248,9 +246,7 @@ void intercept_test(
                 "Eccentric anomaly for orbit 1 is correct");
             ASSERT(angle_eq(intercept.E2, E2),
                 "Eccentric anomaly for orbit 2 is correct");
-        }
 
-        if(intercept_found) {
             ASSERT(mag(pos1 - intercept.position[0]) < threshold,
                 "Intercept position 1 is correct");
             ASSERT(mag(pos2 - intercept.position[1]) < threshold,
