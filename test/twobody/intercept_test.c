@@ -256,9 +256,13 @@ void intercept_test(
             ASSERT(mag(pos2 - intercept.position[1]) < threshold,
                 "Intercept position 2 is correct");
 
-            //vec4d vel1 = orbit_velocity_eccentric(&orbit1, E1);
-            //ASSERT(mag(vel1 - intercept.velocity[0]) < threshold,
-                //"Intercept velocity 1 is correct");
+            vec4d vel1 = orbit_velocity_eccentric(&orbit1, E1);
+            vec4d v_err1 = vel1 - intercept.velocity[0];
+            vec4d v_err2 = vel2 - intercept.velocity[1];
+            ASSERT(zero(dot(v_err1, v_err1) / square(conic_periapsis_velocity(mu, p1, e1))),
+                "Intercept velocity 1 is correct");
+            ASSERT(zero(dot(v_err2, v_err2) / square(conic_periapsis_velocity(mu, p2, e2))),
+                "Intercept velocity 2 is correct");
         }
 
         t0 = t_end;
