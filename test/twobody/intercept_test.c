@@ -170,7 +170,7 @@ void intercept_test(
     // NOTE: at most 4 intercepts in search interval when coplanar and retrograde
     int intercept_found = 0;
     for(int i = 0; i < 4 && !intercept_found && t0 < t1; ++i) {
-        int search_steps = 30;
+        int search_steps = 25;
         double target_distance = 0.0;
         struct intercept intercept;
         double t_end = intercept_search(
