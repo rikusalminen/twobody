@@ -268,22 +268,13 @@ double intercept_search(
     double mu = orbit_gravity_parameter(orbit1);
 
     const struct orbit *orbits[2] = { orbit1, orbit2 };
-    double p[2] = {
-        orbit_semi_latus_rectum(orbit1),
-        orbit_semi_latus_rectum(orbit2)
-    };
-    double e[2] = {
-        orbit_eccentricity(orbit1),
-        orbit_eccentricity(orbit2)
-    };
-    double n[2] = {
-        conic_mean_motion(mu, p[0], e[0]),
-        conic_mean_motion(mu, p[1], e[1])
-    };
-    double t_pe[2] = {
-        orbit_periapsis_time(orbit1),
-        orbit_periapsis_time(orbit2),
-    };
+    double p[2], e[2], n[2], t_pe[2];
+    for(int i = 0; i < 2; ++i) {
+        p[i] = orbit_semi_latus_rectum(orbits[i]);
+        e[i] = orbit_eccentricity(orbits[i]);
+        n[i] = conic_mean_motion(mu, p[i], e[i]);
+        t_pe[i] = orbit_periapsis_time(orbits[i]);
+    }
 
     double vmax =
         conic_periapsis_velocity(mu, p[0], e[0]) +
