@@ -6,23 +6,6 @@
 
 #include "../numtest.h"
 
-#include <twobody/orientation.h>
-#include <stdio.h>
-int orbit_dump(const struct orbit *orbit, int suffix) {
-    printf(
-        "p%d = %lf ; "
-        "e%d = %lf ; "
-        "i%d = %lf ; "
-        "an%d = %lf ; "
-        "argp%d = %lf\n",
-        suffix, orbit_semi_latus_rectum(orbit),
-        suffix, orbit_eccentricity(orbit),
-        suffix, orientation_inclination(orbit->major_axis, orbit->minor_axis, orbit->normal_axis),
-        suffix, orientation_longitude_of_ascending_node(orbit->major_axis, orbit->minor_axis, orbit->normal_axis),
-        suffix, orientation_argument_of_periapsis(orbit->major_axis, orbit->minor_axis, orbit->normal_axis));
-    return 0;
-}
-
 static inline int angle_eq(double a, double b) {
     double diff = angle_clamp(a) - angle_clamp(b);
     if(fabs(diff) > M_PI)
@@ -183,9 +166,6 @@ void intercept_test(
         return;
 
     t0 = times[time_interval*2+0]; t1 = times[time_interval*2+1];
-
-    //orbit_dump(&orbit1, 1); // XXX: !!!
-    //orbit_dump(&orbit2, 2);
 
     // NOTE: at most 4 intercepts in search interval when coplanar and retrograde
     int intercept_found = 0;
