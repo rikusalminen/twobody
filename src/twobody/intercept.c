@@ -298,13 +298,16 @@ double intercept_search(
     int prev_sgn = 0;
     for(int step = 0; step < max_steps; ++step) {
         for(int o = 0; o < 2; ++o) {
+            // solve time of flight
             double M = (t - t_pe[o]) * n[o];
             E[o] = anomaly_mean_to_eccentric(e[o], M);
 
+            // update position and velocity
             pos[o] = orbit_position_eccentric(orbits[o], E[o]);
             vel[o] = orbit_velocity_eccentric(orbits[o], E[o]);
         }
 
+        // calculate distance and relative velocity
         dr = pos[1] - pos[0];
         dv = vel[1] - vel[0];
         dist = mag(dr);
@@ -322,10 +325,8 @@ double intercept_search(
             double next = t + (target_distance - dist) / vrel;
             dt = fmax(fmin(next - t, (t1 - t)/2.0), (t0-t)/2.0);
         } else if(sgn > 0 && prev_sgn < 0 &&
-            (t-prev_time)*vmax + threshold > fabs(dist - target_distance)
-            && (t-prev_time) > (t1-t1)/(max_steps - step)) {
+            (t-prev_time)*vmax + threshold > fabs(dist - target_distance)) {
             // closest approach found, move time backwards and adjust time step
-
             t_end = fmax(t, t_end);
             min_dt = (t - prev_time) / 2;
             dt = min_dt;
@@ -379,22 +380,26 @@ int intercept_orbit(
     int max_intercepts,
     int max_steps) {
 
+    // geometry prefilter: find intersecting true anomaly ranges
     double fs[8];
     for(int o = 0; o < 2; ++o) {
         if(intercept_intersect(orbit1, orbit2, threshold, fs + o*4) == 0)
             return t1;
     }
 
+    // time prefilter: find time intervals corresponding to true anomaly range
     int max_times = 4*max_intercepts;
     double times[max_times];
     int ts = intercept_times(orbit1, orbit2, t0, t1, fs, times, max_times);
 
+    // loop over time intervals
     int num_intercepts = 0;
     for(int time = 0; time < ts; ++time) {
         double t_begin = times[2*time+0], t_end = times[2*time+1];
 
         double t = t_begin;
         while(t < t_end && num_intercepts < max_intercepts) {
+            // intercept: search for closest approach to target_distance
             struct intercept *intercept = intercepts + num_intercepts;
             t = intercept_search(
                 orbit1, orbit2,
