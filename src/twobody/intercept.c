@@ -300,7 +300,10 @@ double intercept_search(
         for(int o = 0; o < 2; ++o) {
             // solve time of flight
             double M = (t - t_pe[o]) * n[o];
-            E[o] = anomaly_mean_to_eccentric(e[o], M);
+            if(conic_parabolic(e[o]))
+                E[o] = anomaly_mean_to_eccentric(e[o], M);
+            else
+                E[o] = anomaly_eccentric_iterate(e[o], M, E[o], -1);
 
             // update position and velocity
             pos[o] = orbit_position_eccentric(orbits[o], E[o]);
