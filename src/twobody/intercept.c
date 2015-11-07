@@ -387,7 +387,7 @@ int intercept_orbit(
     double fs[8];
     for(int o = 0; o < 2; ++o) {
         if(intercept_intersect(orbit1, orbit2, threshold, fs + o*4) == 0)
-            return t1;
+            return 0;
     }
 
     // time prefilter: find time intervals corresponding to true anomaly range
