@@ -338,6 +338,7 @@ double intercept_search(
             sgn = prev_sgn;
         } else if(t > t1) {
             // search exhausted
+            t_end = fmax(t, t_end);
             break;
         } else {
             // searching, skip ahead in time
@@ -386,7 +387,10 @@ int intercept_orbit(
     // geometry prefilter: find intersecting true anomaly ranges
     double fs[8];
     for(int o = 0; o < 2; ++o) {
-        if(intercept_intersect(orbit1, orbit2, threshold, fs + o*4) == 0)
+        if(intercept_intersect(
+            o ? orbit2 : orbit1, o ? orbit1 : orbit2,
+            target_distance + threshold,
+            fs + o*4) == 0)
             return 0;
     }
 
@@ -409,7 +413,7 @@ int intercept_orbit(
                 t, t_end,
                 threshold, target_distance,
                 max_steps, intercept);
-            if(intercept->distance <= threshold)
+            if(fabs(intercept->distance - target_distance) <= threshold)
                 num_intercepts += 1;
         }
     }

@@ -254,19 +254,16 @@ void intercept_soi_test(
     struct numtest_ctx *test_ctx) {
     (void)extra_args;
 
-    ASSERT(num_params == 6, "");
+    ASSERT(num_params == 7, "");
 
     double mu = 1.0 + params[0] * 1.0e5;
     double mu_moon = mu * (0.001 + params[1] * 0.1);
     double r_moon = 1.0 + params[2] * 1.0e5;
     double soi = r_moon * pow(mu_moon / mu, 2.0/5.0);
 
-    // XXX: ellipse from lower orbit?
     double r0 = r_moon * (0.1 + params[3] * 0.5);
-    // XXX: OR escape velocity at SOI?
-    // double v1_moon = sqrt(2.0 * mu / soi);
 
-    double lambda1 = M_PI/4.0;  // XXX: change this
+    double lambda1 = params[4] * (M_PI/3.0);
     double r1 = sqrt(r_moon*r_moon + soi*soi - 2.0*r_moon*soi*cos(lambda1));
 
     // minimum energy trajectory (hohmann transfer)
@@ -276,13 +273,13 @@ void intercept_soi_test(
     //double visviva_max = 0.0; // escape trajectory
     double visviva_max = 0.5 * visviva_min; // closed orbit!
 
-    double visviva = visviva_min + (visviva_max - visviva_min) * params[4];
+    double visviva = visviva_min + (visviva_max - visviva_min) * params[5];
 
     double a = -mu / (2.0 * visviva);
     double e_min = 1.0 - r0/a; // minimum eccentricity
     double e_max = (e_min + 1.0) / 2.0;
 
-    double e = e_min + (e_max - e_min) * params[5];
+    double e = e_min + (e_max - e_min) * params[6];
     double p = a * (1.0 - e*e);
 
     double f0 = acos(clamp(-1.0, 1.0, (p/r0 - 1.0)/e));
@@ -300,4 +297,39 @@ void intercept_soi_test(
 
     ASSERT_LTF(f1-f0, M_PI,
         "Transfer angle is less than 180 degrees");
+
+    double gamma1 = (soi/r1) * sin(lambda1);
+    double arg = gamma1 - f1;
+    ASSERT_RANGEF(arg, -M_PI, 0.0, "Argument of periapsis is -pi..0");
+
+    double t0 = anomaly_true_to_mean(e, f0) / conic_mean_motion(mu, p, e);
+    double t1 = anomaly_true_to_mean(e, f1) / conic_mean_motion(mu, p, e);
+    struct orbit orbit;
+    orbit_from_elements(&orbit, mu, p, e, 0.0, 0.0, arg, -t1);
+
+    struct orbit orbit_moon;
+    orbit_from_elements(&orbit_moon, mu, r_moon, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+    vec4d pos1 = orbit_position_true(&orbit, f1);
+    vec4d pos2 = orbit_position_true(&orbit_moon, 0.0);
+
+    //double dist = mag(pos2 - pos1);
+    //ASSERT_EQF(dist, soi,
+        //"Distance equal to sphere of influence radius");
+
+    double t_begin = -(t1-t0);
+    double t_end = -t1 + conic_period(mu, p, e)*0.6;
+
+    double threshold = soi * 0.01;
+    int max_intercepts = 2;
+    struct intercept intercepts[max_intercepts];
+    int max_steps = 25;
+    int num_intercepts = intercept_orbit(
+        &orbit, &orbit_moon, t_begin, t_end, threshold, soi,
+        intercepts, max_intercepts, max_steps);
+
+    ASSERT(num_intercepts == 1 || num_intercepts == 2,
+        "Intercept found");
+    ASSERT_EQF(intercepts[0].distance, soi,
+        "Distance is equal to sphere of influence radius");
 }
