@@ -50,4 +50,13 @@ double intercept_search(
     int max_steps,
     struct intercept *intercept);
 
+int intercept_orbit(
+    const struct orbit *orbit1,
+    const struct orbit *orbit2,
+    double t0, double t1,
+    double threshold, double target_distance,
+    struct intercept *intercepts,
+    int max_intercepts,
+    int max_steps);
+
 #endif
