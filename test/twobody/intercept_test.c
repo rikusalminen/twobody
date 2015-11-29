@@ -246,3 +246,58 @@ void intercept_test(
 
     ASSERT(intercept_found, "intercept found");
 }
+
+void intercept_soi_test(
+    double *params,
+    int num_params,
+    void *extra_args,
+    struct numtest_ctx *test_ctx) {
+    (void)extra_args;
+
+    ASSERT(num_params == 6, "");
+
+    double mu = 1.0 + params[0] * 1.0e5;
+    double mu_moon = mu * (0.001 + params[1] * 0.1);
+    double r_moon = 1.0 + params[2] * 1.0e5;
+    double soi = r_moon * pow(mu_moon / mu, 2.0/5.0);
+
+    // XXX: ellipse from lower orbit?
+    double r0 = r_moon * (0.1 + params[3] * 0.5);
+    // XXX: OR escape velocity at SOI?
+    // double v1_moon = sqrt(2.0 * mu / soi);
+
+    double lambda1 = M_PI/4.0;  // XXX: change this
+    double r1 = sqrt(r_moon*r_moon + soi*soi - 2.0*r_moon*soi*cos(lambda1));
+
+    // minimum energy trajectory (hohmann transfer)
+    double a_min = (r0 + r1)/2.0;
+    double visviva_min = -mu / (2.0 * a_min);
+
+    //double visviva_max = 0.0; // escape trajectory
+    double visviva_max = 0.5 * visviva_min; // closed orbit!
+
+    double visviva = visviva_min + (visviva_max - visviva_min) * params[4];
+
+    double a = -mu / (2.0 * visviva);
+    double e_min = 1.0 - r0/a; // minimum eccentricity
+    double e_max = (e_min + 1.0) / 2.0;
+
+    double e = e_min + (e_max - e_min) * params[5];
+    double p = a * (1.0 - e*e);
+
+    double f0 = acos(clamp(-1.0, 1.0, (p/r0 - 1.0)/e));
+    double f1 = acos(clamp(-1.0, 1.0, (p/r1 - 1.0)/e));
+
+    ASSERT_LTF(r0, r_moon-soi,
+        "Initial orbit is lower than SOI");
+    ASSERT_LTF(r_moon-soi, r1,
+        "Apoapsis orbit is higher than SOI");
+
+    ASSERT_LTF(conic_periapsis(p, e), r0,
+        "Initial orbit is higher than periapsis");
+    ASSERT_LTF(r1, conic_apoapsis(p, e),
+        "Final orbit is lower than apoapsis");
+
+    ASSERT_LTF(f1-f0, M_PI,
+        "Transfer angle is less than 180 degrees");
+}

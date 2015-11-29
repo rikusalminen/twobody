@@ -4,7 +4,7 @@ compiler:
   - clang
 script:
   - make
-  - ./test/twobody/twobody_test intercept
+  - ./test/twobody/twobody_test intercept_soi
 
 notifications:
   email: false
