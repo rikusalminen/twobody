@@ -272,7 +272,7 @@ void intercept_soi_test(
     double e = e_min + (e_max - e_min) * params[5];
 
     double p = r0 * (1.0 + e);
-    double f1 = acos(clamp(-1.0, 1.0, (p/r1 - 1.0)/e));
+    double f1 = true_anomaly_from_radius(p, e, r1);
 
     ASSERT_LTF(r0, r_moon-soi,
         "Initial orbit is lower than SOI");
