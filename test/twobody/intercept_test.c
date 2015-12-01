@@ -254,8 +254,9 @@ void intercept_soi_test(
     struct numtest_ctx *test_ctx) {
     (void)extra_args;
 
-    ASSERT(num_params == 7, "");
+    ASSERT(num_params == 6, "");
 
+    // a coplanar lunar trajectory based on patched conics method
     double mu = 1.0 + params[0] * 1.0e5;
     double mu_moon = mu * (0.001 + params[1] * 0.1);
     double r_moon = 1.0 + params[2] * 1.0e5;
@@ -263,26 +264,14 @@ void intercept_soi_test(
 
     double r0 = r_moon * (0.1 + params[3] * 0.5);
 
-    double lambda1 = params[4] * (M_PI/3.0);
+    double lambda1 = (M_PI/180.0) + params[4] * (M_PI/3.0);
     double r1 = sqrt(r_moon*r_moon + soi*soi - 2.0*r_moon*soi*cos(lambda1));
 
-    // minimum energy trajectory (hohmann transfer)
-    double a_min = (r0 + r1)/2.0;
-    double visviva_min = -mu / (2.0 * a_min);
+    double e_min = (r1 - r0) / (r1 + r0);
+    double e_max = 2.0;
+    double e = e_min + (e_max - e_min) * params[5];
 
-    //double visviva_max = 0.0; // escape trajectory
-    double visviva_max = 0.5 * visviva_min; // closed orbit!
-
-    double visviva = visviva_min + (visviva_max - visviva_min) * params[5];
-
-    double a = -mu / (2.0 * visviva);
-    double e_min = 1.0 - r0/a; // minimum eccentricity
-    double e_max = (e_min + 1.0) / 2.0;
-
-    double e = e_min + (e_max - e_min) * params[6];
-    double p = a * (1.0 - e*e);
-
-    double f0 = acos(clamp(-1.0, 1.0, (p/r0 - 1.0)/e));
+    double p = r0 * (1.0 + e);
     double f1 = acos(clamp(-1.0, 1.0, (p/r1 - 1.0)/e));
 
     ASSERT_LTF(r0, r_moon-soi,
@@ -295,14 +284,10 @@ void intercept_soi_test(
     ASSERT_LTF(r1, conic_apoapsis(p, e),
         "Final orbit is lower than apoapsis");
 
-    ASSERT_LTF(f1-f0, M_PI,
-        "Transfer angle is less than 180 degrees");
-
     double gamma1 = (soi/r1) * sin(lambda1);
     double arg = gamma1 - f1;
     ASSERT_RANGEF(arg, -M_PI, 0.0, "Argument of periapsis is -pi..0");
 
-    double t0 = anomaly_true_to_mean(e, f0) / conic_mean_motion(mu, p, e);
     double t1 = anomaly_true_to_mean(e, f1) / conic_mean_motion(mu, p, e);
     struct orbit orbit;
     orbit_from_elements(&orbit, mu, p, e, 0.0, 0.0, arg, -t1);
@@ -310,15 +295,16 @@ void intercept_soi_test(
     struct orbit orbit_moon;
     orbit_from_elements(&orbit_moon, mu, r_moon, 0.0, 0.0, 0.0, 0.0, 0.0);
 
+#if 0
     vec4d pos1 = orbit_position_true(&orbit, f1);
     vec4d pos2 = orbit_position_true(&orbit_moon, 0.0);
+    double dist = mag(pos2 - pos1);
+    ASSERT_EQF(dist, soi,
+        "Distance equal to sphere of influence radius");
+#endif
 
-    //double dist = mag(pos2 - pos1);
-    //ASSERT_EQF(dist, soi,
-        //"Distance equal to sphere of influence radius");
-
-    double t_begin = -(t1-t0);
-    double t_end = -t1 + conic_period(mu, p, e)*0.6;
+    double t_begin = -t1;
+    double t_end = t_begin + conic_period(mu, p, e)*0.6;
 
     double threshold = soi * 0.01;
     int max_intercepts = 2;

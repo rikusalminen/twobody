@@ -32,7 +32,7 @@ const struct numtest_case numtest_cases[] = {
     { "universal", universal_test, 5, 0 },
     { "fg", fg_test, 5, 0 },
     { "intercept", intercept_test, 10, 0 },
-    { "intercept_soi", intercept_soi_test, 7, 0 },
+    { "intercept_soi", intercept_soi_test, 6, 0 },
     { 0, 0, 0, 0 }
     };
 
