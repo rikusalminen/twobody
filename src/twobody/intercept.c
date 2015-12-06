@@ -87,7 +87,7 @@ int intercept_intersect(
     // true anomaly between target apoapsis/periapsis +/- threshold
     double maxf = conic_max_true_anomaly(e1);
     double fpe = conic_circular(e1) ? 0.0 :
-        true_anomaly_from_radius(p1, e1, pe2 - threshold);
+        true_anomaly_from_radius(p1, e1, fmax(0.0, pe2 - threshold));
     double fap = (conic_circular(e1) || !conic_closed(e2)) ? maxf :
         true_anomaly_from_radius(p1, e1, ap2 + threshold);
 
