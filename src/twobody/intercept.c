@@ -69,12 +69,8 @@ int intercept_intersect(
     // where orbit1 is between the periapsis and apoapsis of orbit2
     // and closer than threshold to the orbital plane of orbit2
 
-    // radial orbits not handled
     if(orbit_radial(orbit1) || orbit_radial(orbit2))
-        return 0;
-
-    // find 0, 1, or 2 ranges of true anomaly (w.r.t. orbit1)
-    // where orbit1 and orbit2 may be than threshold
+        return 0; // radial orbits not handled
 
     double p1 = orbit_semi_latus_rectum(orbit1);
     double p2 = orbit_semi_latus_rectum(orbit2);
