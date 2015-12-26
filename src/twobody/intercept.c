@@ -347,6 +347,7 @@ double intercept_search(
     };
 
     double min_dt = (t1-t0) / (max_steps/2);
+    double t_min = t0, t_max = t1;
 
 #ifdef INTERCEPT_DEBUG
     FILE *file = fopen("intercept_steps.txt", "w");
@@ -397,8 +398,8 @@ double intercept_search(
 #ifdef INTERCEPT_DEBUG
             printf("[%03d] minimization step\n", step);
 #endif
-            double next = t + (target_distance - dist) / vrel;
-            dt = fmax(fmin(next - t, (t1 - t)/2.0), (t0-t)/2.0);
+            double next = t + (target_distance - dist) / (2.0 * vrel);
+            dt = fmin(next - t, (t_max - t));
         } else if(sgn > 0 && prev_sgn < 0 &&
             (t-prev_time)*vmax + threshold > fabs(dist - target_distance)) {
             // closest approach found, move time backwards and adjust time step
@@ -407,6 +408,7 @@ double intercept_search(
 #endif
 
             t_end = fmax(t, t_end);
+            t_max = fmin(t, t_max);
             min_dt = (t - prev_time) / 2;
             dt = min_dt;
 
@@ -440,6 +442,7 @@ double intercept_search(
         }
 
         t_end = fmax(t_end, t);
+        t_min = fmax(t, t_min);
         prev_time = t; prev_sgn = sgn;
         t += dt;
     }
