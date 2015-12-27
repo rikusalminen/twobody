@@ -306,7 +306,7 @@ void intercept_soi_test(
     double t_begin = -t1;
     double t_end = t_begin + conic_period(mu, p, e)*0.6;
 
-    double threshold = soi * 0.01;
+    double threshold = soi * 0.05;
     int max_intercepts = 2;
     struct intercept intercepts[max_intercepts];
     int max_steps = 25;
@@ -316,6 +316,16 @@ void intercept_soi_test(
 
     ASSERT(num_intercepts == 1 || num_intercepts == 2,
         "Intercept found");
-    ASSERT_EQF(intercepts[0].distance, soi,
-        "Distance is equal to sphere of influence radius");
+
+    int soi_found = 0;
+    for(int i = 0; i < num_intercepts; ++i) {
+        ASSERT_LTF(intercepts[i].distance, soi + threshold,
+            "Distance is less than to sphere of influence radius plus threshold (%d)", i);
+
+        if(ZEROF(square(intercepts[i].distance - soi)/(soi*soi)))
+            soi_found = 1;
+    }
+
+    ASSERT(soi_found,
+        "Sphere of influence intersection found");
 }
