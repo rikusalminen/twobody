@@ -374,6 +374,7 @@ double intercept_search(
         dv = vel[1] - vel[0];
         dist = mag(dr);
         vrel = dot(dr, dv) / dist;
+        double ddot = 2.0 * vrel * (dist - target_distance);
         int sgn = sign(vrel) * sign(dist - target_distance);
 
 #ifdef INTERCEPT_DEBUG
@@ -393,14 +394,15 @@ double intercept_search(
 #endif
             t_end = fmax(t_end, t + min_dt);
             break;
-        } else if(sgn < 0 && fabs(dist-target_distance) < threshold) {
+        } else if(sgn < 0 && fabs(dist-target_distance) < threshold &&
+            (target_distance <= 0.0 || dist > target_distance)) {
             // below threshold, do minimization step
 #ifdef INTERCEPT_DEBUG
             printf("[%03d] minimization step\n", step);
 #endif
-            double next = t + (target_distance - dist) / (2.0 * vrel);
-            dt = fmin(next - t, (t_max - t));
-        } else if(sgn > 0 && prev_sgn < 0 &&
+            dt = (target_distance - dist) / (2.0 * vrel);
+        } else if(
+            ((sgn > 0 && prev_sgn < 0) || (prev_sgn < 0 && zero(ddot*ddot))) &&
             (t-prev_time)*vmax + threshold > fabs(dist - target_distance)) {
             // closest approach found, move time backwards and adjust time step
 #ifdef INTERCEPT_DEBUG
@@ -439,6 +441,13 @@ double intercept_search(
             printf("[%03d] skip ahead %2.2lfx, t: %3.3lf\n", step, dt/min_dt, t);
 #endif
 
+        }
+
+        if(t_max < t1) {
+            // a sign change has been found, limit search to (t_min, t_max)
+            const double bisect_limit = 0.75;
+            double max = t_min + (t_max - t_min) * bisect_limit;
+            dt = fmin(dt, max-t);
         }
 
         t_end = fmax(t_end, t);
