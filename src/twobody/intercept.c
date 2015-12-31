@@ -395,7 +395,8 @@ double intercept_search(
             t_end = fmax(t_end, t + min_dt);
             break;
         } else if(sgn < 0 && fabs(dist-target_distance) < threshold &&
-            (target_distance <= 0.0 || dist > target_distance)) {
+            (target_distance <= 0.0 || dist > target_distance) &&
+            !zero(vrel*vrel)) {
             // below threshold, do minimization step
 #ifdef INTERCEPT_DEBUG
             printf("[%03d] minimization step\n", step);
