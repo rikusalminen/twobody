@@ -387,7 +387,7 @@ double intercept_search(
         printf("[%03d] t: %3.3lf\tdist: %3.3lf\tvrel: %3.3lf\n", step, t, dist, vrel);
 #endif
 
-        if(zero(square(dist - fmax(0.0, target_distance))/square(threshold))) {
+        if(zero(fabs(dist - fmax(0.0, target_distance))/(p[0]+p[1]))) {
             // minimization finished
 #ifdef INTERCEPT_DEBUG
             printf("[%03d] minimization finished\n", step);
