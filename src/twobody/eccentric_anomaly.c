@@ -83,6 +83,17 @@ double eccentric_velocity_horizontal(double mu, double p, double e, double E) {
         return sqrt((mu/a) * (1.0 - e*e)) / (1.0 - e*cos(E));
 }
 
+double eccentric_sigma(double p, double e, double E) {
+    double a = conic_semi_major_axis(p, e);
+
+    if(conic_parabolic(e))
+        return sqrt(p) * E;
+    else if(conic_hyperbolic(e))
+        return sqrt(-a) * e * sinh(E);
+    else
+        return sqrt(a) * e * sin(E);
+}
+
 double eccentric_tan_phi(double e, double E) {
     if(conic_parabolic(e))
         return E;

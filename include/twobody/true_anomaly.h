@@ -9,6 +9,7 @@ double true_dfdt(double mu, double p, double e, double f);
 double true_velocity(double mu, double p, double e, double f);
 double true_velocity_radial(double mu, double p, double e, double f);
 double true_velocity_horizontal(double mu, double p, double e, double f);
+double true_sigma(double p, double e, double f);
 
 double true_tan_phi(double e, double f);
 double true_flight_path_angle(double e, double f);

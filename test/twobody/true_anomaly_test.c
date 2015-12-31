@@ -68,6 +68,10 @@ void true_anomaly_test(
     ASSERT_EQF(rfdot, r*dfdt, "Horizontal velocity = r * fdot");
     ASSERT(rfdot > 0, "Horizontal velocity is positive");
 
+    double sigma = true_sigma(p, e, f);
+    ASSERT_EQF(sigma, r*rdot/sqrt(mu),
+        "Sigma is r*rdot/sqrt(mu)");
+
     double h = conic_specific_angular_momentum(mu, p, e);
     ASSERT_EQF(h, r * rfdot,
         "Specific relative angular momentum");

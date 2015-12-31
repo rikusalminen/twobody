@@ -11,6 +11,7 @@ double eccentric_time(double mu, double p, double e, double E);
 double eccentric_velocity(double mu, double p, double e, double E);
 double eccentric_velocity_radial(double mu, double p, double e, double E);
 double eccentric_velocity_horizontal(double mu, double p, double e, double E);
+double eccentric_sigma(double p, double e, double E);
 
 double eccentric_tan_phi(double e, double E);
 double eccentric_flight_path_angle(double e, double E);

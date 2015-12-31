@@ -70,6 +70,10 @@ void eccentric_anomaly_test(
         "Velocity magitude");
     ASSERT(rfdot > 0, "Horizontal velocity is positive");
 
+    double sigma = eccentric_sigma(p, e, E);
+    ASSERT_EQF(sigma, r*rdot/sqrt(mu),
+        "Sigma is r*rdot/sqrt(mu)");
+
     double h = conic_specific_angular_momentum(mu, p, e);
     ASSERT_EQF(h, r * rfdot,
         "Specific relative angular momentum");

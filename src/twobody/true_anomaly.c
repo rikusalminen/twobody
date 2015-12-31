@@ -27,6 +27,10 @@ double true_velocity_horizontal(double mu, double p, double e, double f) {
     return sqrt(mu/p) * (1 + e * cos(f));
 }
 
+double true_sigma(double p, double e, double f) {
+    return sqrt(p) * (e * sin(f)) / (1 + e * cos(f));
+}
+
 double true_tan_phi(double e, double f) {
     return e * sin(f) / (1 + e * cos(f));
 }
