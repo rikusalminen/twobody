@@ -222,7 +222,7 @@ int intercept_times(
         if(t_begin < t_end) {
             if(num_times >= 1 &&
                 (t_begin <= intercept_times[2*num_times-1] ||
-                zero(t_begin - intercept_times[2*num_times-1]))) {
+                zero(square(t_begin - intercept_times[2*num_times-1])))) {
                 // merge to previous time interval
                 intercept_times[2*num_times-1] = t_end;
             } else {
