@@ -58,11 +58,12 @@ void gauss_test(
     double sigma1 = r1 * eccentric_velocity_radial(mu, p, e, E1) / sqrt(mu);
     double fE = eccentric_f(mu, p, e, r1, E2-E1);
     double gE = eccentric_g(mu, p, e, r1, sigma1, E2-E1);
-    //double fdotE = eccentric_fdot(mu, p, e, r1, r2, E2-E1);
+    double fdotE = eccentric_fdot(mu, p, e, r1, r2, E2-E1);
     double gdotE = eccentric_gdot(mu, p, e, r2, E2-E1);
 
     ASSERT_EQF(f, fE, "Lagrangian coefficient f is equal");
     ASSERT_EQF(g, gE, "Lagrangian coefficient g is equal");
-    //ASSERT_EQF(fdot, fdotE, "Lagrangian coefficient fdot is equal");
+    ASSERT_EQF(fdot, fdotE, "Lagrangian coefficient fdot is equal");
     ASSERT_EQF(gdot, gdotE, "Lagrangian coefficient gdot is equal");
+    ASSERT_EQF(fdot, (f*gdot - 1.0)/g, "Largrangian coefficient identity");
 }
