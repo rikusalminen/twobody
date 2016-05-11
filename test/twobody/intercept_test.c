@@ -309,7 +309,7 @@ void intercept_soi_test(
     double threshold = soi * 0.05;
     int max_intercepts = 2;
     struct intercept intercepts[max_intercepts];
-    int max_steps = 25;
+    int max_steps = 32;
     int num_intercepts = intercept_orbit(
         &orbit, &orbit_moon, t_begin, t_end, threshold, soi,
         intercepts, max_intercepts, max_steps);
