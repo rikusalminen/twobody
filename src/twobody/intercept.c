@@ -314,7 +314,7 @@ double intercept_search(
     int max_steps,
     struct intercept *intercept) {
 
-//#define INTERCEPT_DEBUG
+#define INTERCEPT_DEBUG
 #ifdef INTERCEPT_DEBUG
     intercept_dump(orbit1, orbit2, t0, t1, target_distance);
 #endif
@@ -339,8 +339,10 @@ double intercept_search(
 
     vec4d pos[2] = {{ NAN, NAN, NAN, NAN}, { NAN, NAN, NAN, NAN}};
     vec4d vel[2] = {{ NAN, NAN, NAN, NAN}, { NAN, NAN, NAN, NAN}};
+    vec4d acc[2] = {{ NAN, NAN, NAN, NAN}, { NAN, NAN, NAN, NAN}};
     vec4d dr = { NAN, NAN, NAN, NAN}, dv = { NAN, NAN, NAN, NAN};
-    double dist = NAN, vrel = NAN;
+    vec4d da = { NAN, NAN, NAN, NAN};
+    double dist = NAN, vrel = NAN, arel = NAN;
     double E[2] = { // eccentric anomaly, initialize to mean anomaly at t0
         (t0 - t_pe[0]) * n[0],
         (t0 - t_pe[1]) * n[1],
@@ -364,21 +366,26 @@ double intercept_search(
             else
                 E[o] = anomaly_eccentric_iterate(e[o], M, E[o], -1);
 
-            // update position and velocity
+            // update position and velocity and acceleration
             pos[o] = orbit_position_eccentric(orbits[o], E[o]);
             vel[o] = orbit_velocity_eccentric(orbits[o], E[o]);
+            vec4d r = mag4d(pos[o]);
+            acc[o] = unit4d(pos[o]) * (splat4d(mu) / (r*r*r));
         }
 
         // calculate distance and relative velocity
         dr = pos[1] - pos[0];
         dv = vel[1] - vel[0];
+        da = acc[1] - acc[0];
         dist = mag(dr);
         vrel = dot(dr, dv) / dist;
+        arel = dot(dr, da) / dist;
+        double a = (-0.5*target_distance*arel - vrel*vrel - arel*dist)/(2.0*vrel*vrel);
         double ddot = 2.0 * vrel * (dist - target_distance);
         int sgn = sign(vrel) * sign(dist - target_distance);
 
 #ifdef INTERCEPT_DEBUG
-        fprintf(file, "%d\t%lf\t%lf\t%lf\n", step, t, (dist-target_distance), vrel);
+        fprintf(file, "%d\t%lf\t%lf\t%lf\t%lf\n", step, t, (dist-target_distance), vrel, a);
 #endif
 
         double dt = min_dt;
