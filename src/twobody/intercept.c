@@ -402,6 +402,11 @@ double intercept_search(
             printf("[%03d] minimization step\n", step);
 #endif
             dt = (target_distance - dist) / (2.0 * vrel);
+            // XXX: clamp dt to a reasonable limit to avoid overshooting
+            // TODO: this is somewhat arbitrary, attempt using Halley's method to take
+            // acceleration into account and see if it works better
+            double t_max = (t_end - t) * 0.75; // XXX: arbitrary bisection limit
+            dt = fmax(min_dt * 0.4, fmin(t_max, dt)); // XXX: magic constant lower bound
         } else if(
             ((sgn > 0 && prev_sgn < 0) || (prev_sgn < 0 && zero(ddot*ddot))) &&
             (t-prev_time)*vmax + threshold > fabs(dist - target_distance)) {
