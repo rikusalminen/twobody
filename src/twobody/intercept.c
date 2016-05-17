@@ -285,20 +285,29 @@ int intercept_dump(
     for(int i = 0; i < max_steps; ++i) {
         double t = t0 + (i / (double)(max_steps-1)) * (t1-t0);
 
-        vec4d pos[2], vel[2];
+        vec4d pos[2], vel[2], acc[2];
         for(int o = 0; o < 2; ++o) {
             const struct orbit *orbit = o ? orbit2 : orbit1;
             double M = (t - t_pe[o]) * n[o];
             double E = anomaly_mean_to_eccentric(e[o], M);
             pos[o] = orbit_position_eccentric(orbit, E);
             vel[o] = orbit_velocity_eccentric(orbit, E);
+            vec4d r = mag4d(pos[o]);
+            acc[o] = unit4d(pos[o]) * (splat4d(mu) / (r*r*r));
         }
 
-        double dist = mag(pos[1]-pos[0]);
-        double vrel = dot(vel[1]-vel[0], pos[1]-pos[0])/dist;
+        //double dist = mag(pos[1]-pos[0]);
+        //double vrel = dot(vel[1]-vel[0], pos[1]-pos[0])/dist;
+        //double arel = dot(acc[1]-acc[0], pos[1]-pos[0])/dist;
+        //double a = 2.0*dot(vel[1]-vel[0], vel[1]-vel[0]) +
+            //2.0 * dot(acc[1]-acc[0], pos[1]-pos[0]);
 
-        double d = (dist-target_distance);
-        fprintf(file, "%lf\t%lf\t%lf\t%lf\n", t, d, vrel, 2.0*vrel*d);
+        double tgt = mag(pos[1]-pos[0]) - target_distance;
+        double d = dot(pos[1]-pos[0], pos[1]-pos[0]) - target_distance*target_distance;
+        double dd = 2.0 * dot(pos[1]-pos[0], vel[1]-vel[0]);
+        double ddd = 2.0*dot(vel[1]-vel[0], vel[1]-vel[0]) +
+            -2.0*dot(acc[1]-acc[0], pos[1]-pos[0]);
+        fprintf(file, "%lf\t%lf\t%lf\t%lf\t%lf\n", t, d, dd, ddd, tgt);
     }
 
     fclose(file);
@@ -314,7 +323,7 @@ double intercept_search(
     int max_steps,
     struct intercept *intercept) {
 
-#define INTERCEPT_DEBUG
+//#define INTERCEPT_DEBUG
 #ifdef INTERCEPT_DEBUG
     intercept_dump(orbit1, orbit2, t0, t1, target_distance);
 #endif
@@ -342,7 +351,7 @@ double intercept_search(
     vec4d acc[2] = {{ NAN, NAN, NAN, NAN}, { NAN, NAN, NAN, NAN}};
     vec4d dr = { NAN, NAN, NAN, NAN}, dv = { NAN, NAN, NAN, NAN};
     vec4d da = { NAN, NAN, NAN, NAN};
-    double dist = NAN, vrel = NAN, arel = NAN;
+    double dist = NAN, vrel = NAN;
     double E[2] = { // eccentric anomaly, initialize to mean anomaly at t0
         (t0 - t_pe[0]) * n[0],
         (t0 - t_pe[1]) * n[1],
@@ -379,13 +388,13 @@ double intercept_search(
         da = acc[1] - acc[0];
         dist = mag(dr);
         vrel = dot(dr, dv) / dist;
-        arel = dot(dr, da) / dist;
-        double a = (-0.5*target_distance*arel - vrel*vrel - arel*dist)/(2.0*vrel*vrel);
         double ddot = 2.0 * vrel * (dist - target_distance);
         int sgn = sign(vrel) * sign(dist - target_distance);
 
+        (void)da; // XXX: !!1
+
 #ifdef INTERCEPT_DEBUG
-        fprintf(file, "%d\t%lf\t%lf\t%lf\t%lf\n", step, t, (dist-target_distance), vrel, a);
+        fprintf(file, "%d\t%lf\t%lf\t%lf\n", step, t, (dist*dist-target_distance*target_distance), vrel);
 #endif
 
         double dt = min_dt;
@@ -408,12 +417,33 @@ double intercept_search(
 #ifdef INTERCEPT_DEBUG
             printf("[%03d] minimization step\n", step);
 #endif
+
+#ifndef NOT_HALLEY
+            double d = dot(pos[1]-pos[0], pos[1]-pos[0]) - target_distance*target_distance;
+            double dd = 2.0 * dot(pos[1]-pos[0], vel[1]-vel[0]);
+            double ddd = 2.0*dot(vel[1]-vel[0], vel[1]-vel[0]) +
+                -2.0*dot(acc[1]-acc[0], pos[1]-pos[0]);
+
+            dt = -2*dd / (2*d - ddd);  // XXX: this might go backwards!
+
+            double newton = -d / dd;  // XXX: newton step
+            double halley = 2*dd / (2*d - ddd);  // XXX: halley step --- sign?!?!?!
+
+            dt = halley;
+
+            //printf("\tnewton: %lf\thalley: %lf\n", newton, halley);
+
+            // XXX: same ugly clamping
+            double dt_max = (t_max - t) * 0.75; // XXX: arbitrary bisection limit
+            dt = fmax(min_dt * 0.4, fmin(dt_max, dt)); // XXX: magic constant lower bound
+#else
             dt = (target_distance - dist) / (2.0 * vrel);
             // XXX: clamp dt to a reasonable limit to avoid overshooting
             // TODO: this is somewhat arbitrary, attempt using Halley's method to take
             // acceleration into account and see if it works better
             double dt_max = (t_max - t) * 0.75; // XXX: arbitrary bisection limit
             dt = fmax(min_dt * 0.4, fmin(dt_max, dt)); // XXX: magic constant lower bound
+#endif
         } else if(
             ((sgn > 0 && prev_sgn < 0) || (prev_sgn < 0 && zero(ddot*ddot))) &&
             (t-prev_time)*vmax + threshold > fabs(dist - target_distance)) {
