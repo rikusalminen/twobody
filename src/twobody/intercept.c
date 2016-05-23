@@ -293,7 +293,7 @@ int intercept_dump(
             pos[o] = orbit_position_eccentric(orbit, E);
             vel[o] = orbit_velocity_eccentric(orbit, E);
             vec4d r = mag4d(pos[o]);
-            acc[o] = unit4d(pos[o]) * (splat4d(mu) / (r*r*r));
+            acc[o] = -unit4d(pos[o]) * (splat4d(mu) / (r*r*r));
         }
 
         //double dist = mag(pos[1]-pos[0]);
@@ -306,8 +306,18 @@ int intercept_dump(
         double d = dot(pos[1]-pos[0], pos[1]-pos[0]) - target_distance*target_distance;
         double dd = 2.0 * dot(pos[1]-pos[0], vel[1]-vel[0]);
         double ddd = 2.0*dot(vel[1]-vel[0], vel[1]-vel[0]) +
-            -2.0*dot(acc[1]-acc[0], pos[1]-pos[0]);
-        fprintf(file, "%lf\t%lf\t%lf\t%lf\t%lf\n", t, d, dd, ddd, tgt);
+            2.0*dot(acc[1]-acc[0], pos[1]-pos[0]);
+
+        double newton = -d / dd;  // XXX: newton step
+        double halley = -2.0*d*dd / (2*dd*dd - d*ddd);  // XXX: halley step
+
+
+        double N = 5.0; // laguerre polynomial degree
+        double G = dd/d;
+        double H = G*G - ddd/d;
+        double laguerre = -N / (G + sign(G)*sqrt(fabs((N-1)*(N*H - G*G))));
+
+        fprintf(file, "%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", t, d, dd, ddd, tgt, newton, halley, laguerre);
     }
 
     fclose(file);
@@ -379,7 +389,7 @@ double intercept_search(
             pos[o] = orbit_position_eccentric(orbits[o], E[o]);
             vel[o] = orbit_velocity_eccentric(orbits[o], E[o]);
             vec4d r = mag4d(pos[o]);
-            acc[o] = unit4d(pos[o]) * (splat4d(mu) / (r*r*r));
+            acc[o] = -unit4d(pos[o]) * (splat4d(mu) / (r*r*r));
         }
 
         // calculate distance and relative velocity
@@ -422,14 +432,21 @@ double intercept_search(
             double d = dot(pos[1]-pos[0], pos[1]-pos[0]) - target_distance*target_distance;
             double dd = 2.0 * dot(pos[1]-pos[0], vel[1]-vel[0]);
             double ddd = 2.0*dot(vel[1]-vel[0], vel[1]-vel[0]) +
-                -2.0*dot(acc[1]-acc[0], pos[1]-pos[0]);
+                2.0*dot(acc[1]-acc[0], pos[1]-pos[0]);
 
-            dt = -2*dd / (2*d - ddd);  // XXX: this might go backwards!
+            //dt = -2*dd / (2*d - ddd);  // XXX: this might go backwards!
 
             double newton = -d / dd;  // XXX: newton step
-            double halley = 2*dd / (2*d - ddd);  // XXX: halley step --- sign?!?!?!
+            double halley = -2.0*d*dd / (2*dd*dd - d*ddd);  // XXX: halley step
 
-            dt = halley;
+            double N = 5.0; // laguerre polynomial degree
+            double G = dd/d;
+            double H = G*G - ddd/d;
+            double laguerre = -N / (G + sign(G)*sqrt(fabs((N-1)*(N*H - G*G))));
+
+            (void)newton; (void)halley; (void)laguerre;
+
+            dt = newton;
 
             //printf("\tnewton: %lf\thalley: %lf\n", newton, halley);
 
