@@ -20,6 +20,8 @@ forces.
 * Predict position and velocity vectors (and other quantities) at any point in
     time using true anomaly, eccentric/hyperbolic/parabolic anomaly or
     universal variables
+* Find closest approaches between satellites or sphere of influence
+    transitions on lunar/interplanetary trajectories
 
 ## Tests
 
@@ -43,3 +45,7 @@ Running the tests takes tens of minutes of CPU time.
 * Conway, B.: An improved algorithm due to Laguerre for the
     solution of Kepler's equation
 * Danby, J.M.A.: The solution of Kepler's Equation, Parts I, II, III
+* Hoots, Crawford, Roehrich: An analytic method to determine future close
+    approaches between satellites
+* Rodriguez, Fadrique, Klinkrad: Collision risk assessment with a "smart
+    sieve" method
