@@ -262,7 +262,7 @@ void intercept_soi_test(
     double r_moon = 1.0 + params[2] * 1.0e5;
     double soi = r_moon * pow(mu_moon / mu, 2.0/5.0);
 
-    double r0 = r_moon * (0.1 + params[3] * 0.5);
+    double r0 = r_moon * (0.1 + params[3] * 0.3);
 
     double lambda1 = (M_PI/180.0) + params[4] * (M_PI/3.0);
     double r1 = sqrt(r_moon*r_moon + soi*soi - 2.0*r_moon*soi*cos(lambda1));
@@ -309,7 +309,7 @@ void intercept_soi_test(
     double threshold = soi * 0.05;
     int max_intercepts = 2;
     struct intercept intercepts[max_intercepts];
-    int max_steps = 32;
+    int max_steps = 100;
     int num_intercepts = intercept_orbit(
         &orbit, &orbit_moon, t_begin, t_end, threshold, soi,
         intercepts, max_intercepts, max_steps);
@@ -317,13 +317,27 @@ void intercept_soi_test(
     ASSERT(num_intercepts == 1 || num_intercepts == 2,
         "Intercept found");
 
+    // reference velocity to compare closing speed against
+    double v_ref = (1.0/2.0) * (
+        conic_periapsis_velocity(
+            mu,
+            orbit_semi_latus_rectum(&orbit),
+            orbit_eccentricity(&orbit)) +
+        conic_periapsis_velocity(
+            mu,
+            orbit_semi_latus_rectum(&orbit_moon),
+            orbit_eccentricity(&orbit_moon)));
+
     int soi_found = 0;
     for(int i = 0; i < num_intercepts; ++i) {
         ASSERT_LTF(intercepts[i].distance, soi + threshold,
             "Distance is less than to sphere of influence radius plus threshold (%d)", i);
 
-        if(ZEROF(square(intercepts[i].distance - soi)/(soi*soi)))
+        if(ZEROF(square(intercepts[i].distance - soi)/(soi*soi)) &&
+            (ZEROF(square(intercepts[i].speed/v_ref)) || intercepts[i].speed < 0.0)) {
             soi_found = 1;
+
+        }
     }
 
     ASSERT(soi_found,
