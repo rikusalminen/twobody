@@ -313,6 +313,8 @@ double intercept_search(
     double target_distance,
     int max_steps,
     struct intercept *intercept) {
+    // search time interval (t0..t1) where distance between orbits
+    // is closest to target_distance and within threshold of target_distance
 
 //#define INTERCEPT_DEBUG
 #ifdef INTERCEPT_DEBUG
@@ -489,6 +491,9 @@ int intercept_orbit(
     struct intercept *intercepts,
     int max_intercepts,
     int max_steps) {
+    // find all closest closest approaches (to target_distance) in the time
+    // interval (t0..t1) that are closer than threshold.
+    // at most max_intercepts closest approaches are searched for
 
     // geometry prefilter: find intersecting true anomaly ranges
     double fs[8];
