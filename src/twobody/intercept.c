@@ -170,11 +170,17 @@ int intercept_times(
         double n = conic_mean_motion(mu, p, e);
 
         double f_t0 = -2.0 * M_PI, f_t1 = M_PI;
-        if(!conic_closed(e)) {
-            // restrict true anomaly to range within time (t0..t1)
+        if(orbits[o]->orbital_energy >= 0.0) {
+            // for open orbits, restrict true anomaly to range within time (t0..t1)
             double M_t0 = (t0 - t_pe) * n, M_t1 = (t1 - t_pe) * n;
             f_t0 = anomaly_mean_to_true(e, M_t0);
             f_t1 = anomaly_mean_to_true(e, M_t1);
+        } else {
+            // for closed orbits, compute period and number of complete orbits
+            // between periapsis time and t=t0
+            double P = 2.0*M_PI / n;
+            periods[o] = P;
+            n_orbit[o] = (int)trunc((t0 - t_pe)/P + (t_pe > t0 ? -0.5 : 0.5));
         }
 
         for(int i = 0; i < 2; ++i) {
@@ -191,12 +197,6 @@ int intercept_times(
 
                 times[o][2*i+j] = t_pe + M/n;
             }
-        }
-
-        if(conic_closed(e)) {
-            double P = 2.0*M_PI / n;
-            periods[o] = P;
-            n_orbit[o] = (int)trunc((t0 - t_pe)/P + (t_pe > t0 ? -0.5 : 0.5));
         }
     }
 
@@ -241,8 +241,10 @@ int intercept_times(
         double fnext1 = fs[4*advance+2*isect[advance]+1];
         if(isect[advance] == 2 || fnext0 >= fnext1) {
             // advance to next orbit
-            if(!orbit_elliptic(orbits[advance]))
-                break; // open orbit, search exhausted
+            if(orbits[advance]->orbital_energy >= 0.0) {
+                // open orbit, search exhausted
+                break;
+            }
 
             isect[advance] = 0;
             n_orbit[advance] += 1;

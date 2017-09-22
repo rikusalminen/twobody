@@ -29,7 +29,7 @@ void intercept_test(
         (-1.0 + 2.0*params[4]) * M_PI;
     double arg = (-1.0 + 2.0*params[5]) * M_PI;
     double E1 = (-1.0 + 2.0*params[6]) *
-        conic_closed(e1) ? M_PI : M_PI*0.5;
+        (conic_closed(e1) ? M_PI : M_PI*0.5);
     double f1 = anomaly_eccentric_to_true(e1, E1);
 
     struct orbit orbit1;
@@ -46,7 +46,7 @@ void intercept_test(
 
     double e2 = params[7] * 2.0;
     double E2 = (-1.0 + 2.0*params[8]) *
-        conic_closed(e2) ? M_PI : M_PI*0.5;
+        (conic_closed(e2) ? M_PI : M_PI*0.5);
     double f2 = anomaly_eccentric_to_true(e2, E2);
     double reli = (-1.0 + 2.0*params[8]) * M_PI;
     double p2 = r1 * (1.0 + e2 * cos(f2));
@@ -211,6 +211,10 @@ void intercept_test(
             square(orbit1.periapsis_time - orbit2.periapsis_time) /
             square(t1-t0));
 
+        double time_scale =
+            (anomaly_eccentric_to_mean(e1, M_PI/2.0) / conic_mean_motion(mu, p1, e1)) +
+            (anomaly_eccentric_to_mean(e2, M_PI/2.0) / conic_mean_motion(mu, p2, e2));
+
         if(conic_circular(e1) && conic_circular(e2) &&
             coplanar) {
             // circular and coplanar (or retrograde coplanar)
@@ -219,7 +223,7 @@ void intercept_test(
             periapsis_eq && coplanar && coapsis) {
             // equal conic sections, coplanar and equal periapsis time and pos
             intercept_found = 1;
-        } else if(EQF(intercept.time, t)) {
+        } else if(ZEROF(square(intercept.time-t)/square(time_scale))) {
             intercept_found = 1;
 
             ASSERT(angle_eq(intercept.E1, E1),
